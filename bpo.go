@@ -3,16 +3,16 @@ package main
 import (
 	"bpo/bpo" // generated code via sqlc
 	"context"
-	"database/sql"
-	"embed"
 	"fmt"
 	"html/template"
 	"log"
-	_ "github.com/lib/pq"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Server struct {
@@ -54,7 +54,7 @@ func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	err = s.queries.DeleteBloodPressureObservation(r.Context(), id)
+	err = s.queries.DeleteBloodPressureObservation(r.Context(), int32(id))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -65,8 +65,14 @@ func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Executing postHandler()")
+	log.Println(r.URL)
 
-	observedAt, err := time.Parse("2006-01-02T15:04", r.PostFormValue("observedAt"))
+	datetimestr := r.PostFormValue("observedAt")
+	if datetimestr == "" {
+		datetimestr = r.PostFormValue("date") + "T" + r.PostFormValue("time")
+	}
+	log.Println(datetimestr)
+	observedAt, err := time.Parse("2006-01-02T15:04", datetimestr) // local time from the users perspective, do not track timezone or convert
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -90,7 +96,6 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 	comment := r.FormValue("comment")
 
 	var id int = 0
-	log.Println(r.URL)
 	if idPath := r.PathValue("id"); idPath != "" {
 		log.Println(r.PathValue("Detected ID in URL. Converting to int..."))
 		id, err = strconv.Atoi(idPath)
@@ -112,10 +117,10 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 	if id == 0 {
 		log.Println("Creating new observation...")
 		observation := bpo.CreateBloodPressureObservationParams{
-			ObservedAt: observedAt,
-			Systolic:   systolic,
-			Diastolic:  diastolic,
-			Pulse:      pulse,
+			ObservedAt: pgtype.Timestamp{Time: observedAt, Valid: true},
+			Systolic:   int32(systolic),
+			Diastolic:  int32(diastolic),
+			Pulse:      int32(pulse),
 			Irregular:  irregular,
 			Comment:    comment,
 		}
@@ -129,11 +134,11 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Println("Updating observation...")
 		observation := bpo.UpdateBloodPressureObservationParams{
-			ObservedAt: observedAt,
-			ID:         id,
-			Systolic:   systolic,
-			Diastolic:  diastolic,
-			Pulse:      pulse,
+			ObservedAt: pgtype.Timestamp{Time: observedAt, Valid: true},
+			ID:         int32(id),
+			Systolic:   int32(systolic),
+			Diastolic:  int32(diastolic),
+			Pulse:      int32(pulse),
 			Irregular:  irregular,
 			Comment:    comment,
 		}
@@ -164,12 +169,12 @@ func main() {
 		getEnv("POSTGRES_PASSWORD", "gbpwassword"),
 		getEnv("POSTGRES_DB", "gbpw"),
 	)
-	db, err := sql.Open("postgres", connStr)
+	db, err := pgx.Connect(ctx, connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
-	db.Ping()
+	defer db.Close(ctx)
+	db.Ping(ctx)
 	queries := bpo.New(db)
 	server := &Server{queries: queries}
 

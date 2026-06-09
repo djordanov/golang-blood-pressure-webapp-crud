@@ -1,11 +1,4 @@
 version: "2"
-overrides:
-  go:
-    overrides:
-      - db_type: "boolean"
-        go_type: "bool"
-      - db_type: "INTEGER"
-        go_type: "int"
 sql:
   - engine: "postgresql"
     queries: "query.sql"
@@ -16,3 +9,4 @@ sql:
       go:
         package: "bpo"
         out: "bpo"
+        sql_package: "pgx/v5"

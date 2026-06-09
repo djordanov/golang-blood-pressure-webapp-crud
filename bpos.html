@@ -2,7 +2,7 @@
 <tr>
   <td hidden><input form="bpo-{{.ID}}" name="id" type="number" value="{{.ID}}" disabled /></td>
   <td><input form="bpo-{{.ID}}" name="observedAt" type="datetime-local"
-      value="{{.ObservedAt.Format `2006-01-02T15:04`}}" /></td>
+      value="{{.ObservedAt.Time.Format `2006-01-02T15:04`}}" /></td>
   <td><input form="bpo-{{.ID}}" name="irregular" type="checkbox" {{if .Irregular}}checked{{end}} /></td>
   <td><input form="bpo-{{.ID}}" name="systolic" type="number" value="{{.Systolic}}" /></td>
   <td><input form="bpo-{{.ID}}" name="diastolic" type="number" value="{{.Diastolic}}" /></td>
@@ -21,7 +21,7 @@
 {{define "bpo-row"}}
 <tr>
   <td hidden></td>
-  <td>{{.ObservedAt.Format `2006-01-02T15:04`}}</td>
+  <td>{{.ObservedAt.Time.Format `2006-01-02T15:04`}}</td>
   <td><input type="checkbox" {{if .Irregular}}checked{{end}} disabled /></td>
   <td>{{.Systolic}}</td>
   <td>{{.Diastolic}}</td>
