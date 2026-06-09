@@ -164,7 +164,8 @@ func getEnv(key, fallback string) string {
 func main() {
 	ctx := context.Background()
 	connStr := fmt.Sprintf(
-		"host=localhost port=5432 user=%s password=%s dbname=%s sslmode=disable",
+		"host=%s port=5432 user=%s password=%s dbname=%s sslmode=disable",
+		getEnv("POSTGRES_HOST", "localhost"),
 		getEnv("POSTGRES_USER", "gbpw"),
 		getEnv("POSTGRES_PASSWORD", "gbpwassword"),
 		getEnv("POSTGRES_DB", "gbpw"),
