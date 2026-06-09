@@ -14,24 +14,24 @@ FROM blood_pressure_observation
 INSERT INTO blood_pressure_observation
     (observed_at, systolic, diastolic, pulse, irregular, comment)
 VALUES
-    (:observed_at, :systolic, :diastolic, :pulse, :irregular, :comment)
+    ($1, $2, $3, $4, $5, $6)
 RETURNING *
 ;
 
 -- name: UpdateBloodPressureObservation :one
 UPDATE blood_pressure_observation
 SET
-    observed_at = :observed_at,
-    systolic = :systolic,
-    diastolic = :diastolic,
-    pulse = :pulse,
-    irregular = :irregular,
-    comment = :comment
-WHERE id = :id
+    observed_at = $1,
+    systolic = $2,
+    diastolic = $3,
+    pulse = $4,
+    irregular = $5,
+    comment = $6
+WHERE id = $7
 RETURNING *
 ;
 
 -- name: DeleteBloodPressureObservation :exec
 DELETE FROM blood_pressure_observation
-WHERE id = ?
+WHERE id = $1
 ;

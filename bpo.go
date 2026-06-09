@@ -4,11 +4,13 @@ import (
 	"bpo/bpo" // generated code via sqlc
 	"context"
 	"database/sql"
-	_ "embed"
+	"embed"
+	"fmt"
 	"html/template"
 	"log"
-	_ "modernc.org/sqlite"
+	_ "github.com/lib/pq"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -21,9 +23,6 @@ type TemplateContext struct {
 	Bpos     []bpo.BloodPressureObservation
 	Editable bool
 }
-
-//go:embed schema.sql
-var ddl string
 
 var templates = template.Must(template.ParseFiles("bpos.html"))
 
@@ -150,17 +149,27 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", 303)
 }
 
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
 func main() {
 	ctx := context.Background()
-	db, err := sql.Open("sqlite", "bpo.db")
+	connStr := fmt.Sprintf(
+		"host=localhost port=5432 user=%s password=%s dbname=%s sslmode=disable",
+		getEnv("POSTGRES_USER", "gbpw"),
+		getEnv("POSTGRES_PASSWORD", "gbpwassword"),
+		getEnv("POSTGRES_DB", "gbpw"),
+	)
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-
 		log.Fatal(err)
-
 	}
-	defer db.Close() // not sure if actually necessary
+	defer db.Close()
 	db.Ping()
-	db.ExecContext(ctx, ddl)
 	queries := bpo.New(db)
 	server := &Server{queries: queries}
 

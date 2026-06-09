@@ -7,9 +7,11 @@ overrides:
       - db_type: "INTEGER"
         go_type: "int"
 sql:
-  - engine: "sqlite"
+  - engine: "postgresql"
     queries: "query.sql"
     schema: "schema.sql"
+    database:
+      uri: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}?sslmode=disable"
     gen:
       go:
         package: "bpo"

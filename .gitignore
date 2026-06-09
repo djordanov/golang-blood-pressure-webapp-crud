@@ -2,3 +2,5 @@ bpo-server
 *.db
 *.log
 bpo/
+.env
+.env.fish
