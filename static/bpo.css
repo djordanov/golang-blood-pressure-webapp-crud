@@ -1,0 +1,20 @@
+td,
+th {
+  padding: 0.5rem 0.75rem;
+}
+
+.time-col {
+  width: 16rem;
+}
+
+.systolic-col {
+  width: 5rem;
+}
+
+.diastolic-col {
+  width: 5rem;
+}
+
+.pulse-col {
+  width: 5rem;
+}

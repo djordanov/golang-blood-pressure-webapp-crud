@@ -1,0 +1,16 @@
+version: "2"
+overrides:
+  go:
+    overrides:
+      - db_type: "boolean"
+        go_type: "bool"
+      - db_type: "INTEGER"
+        go_type: "int"
+sql:
+  - engine: "sqlite"
+    queries: "query.sql"
+    schema: "schema.sql"
+    gen:
+      go:
+        package: "bpo"
+        out: "bpo"

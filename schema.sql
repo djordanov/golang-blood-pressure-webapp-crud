@@ -1,0 +1,9 @@
+CREATE TABLE blood_pressure_observation (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    observed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    systolic INTEGER NOT NULL,
+    diastolic INTEGER NOT NULL,
+    pulse INTEGER NOT NULL,
+    irregular BOOLEAN NOT NULL DEFAULT 0,
+    comment TEXT NOT NULL
+)
