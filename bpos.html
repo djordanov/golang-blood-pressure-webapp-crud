@@ -39,7 +39,8 @@
   <link rel="icon" href="data:,">
   <title>Blood Pressure</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-  <link rel="stylesheet" href="static/bpo.css">
+  <link rel="stylesheet" href="static/app.css">
+  <script src="static/app.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont/tabler-icons.min.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -92,18 +93,18 @@
       </tbody>
     </table>
 
-    <button command="show-modal" commandfor="add-new-bpo-dialog">ADD NEW</button>
+    <button command="show-modal" commandfor="add-new-bpo-dialog" onclick="setDefaultDateTime()">ADD NEW</button>
     <dialog id="add-new-bpo-dialog" closedby="any">
       <article>
         <form id="bpo-new" action="/" method="post">
           <fieldset class="grid">
             <div>
               <label for="date">Date</label>
-              <input name="date" type="date" />
+              <input id="bpo-new-date" name="date" type="date" />
             </div>
             <div>
               <label for="time">Time</label>
-              <input name="time" type="time" />
+              <input id="bpo-new-time" name="time" type="time" />
             </div>
           </fieldset>
           <fieldset class="grid">
