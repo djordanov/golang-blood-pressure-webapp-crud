@@ -1,8 +1,9 @@
 {{define "bpo-row-editable"}}
 <tr>
   <td hidden><input form="bpo-{{.ID}}" name="id" type="number" value="{{.ID}}" disabled /></td>
-  <td><input form="bpo-{{.ID}}" name="observedAt" type="datetime-local"
-      value="{{.ObservedAt.Time.Format `2006-01-02T15:04`}}" /></td>
+  <td><input form="bpo-{{.ID}}" name="date" type="date" value="{{.ObservedAt.Time.Format `Mon. 02 January 2006`}}" />
+  </td>
+  <td><input form="bpo-{{.ID}}" name="time" type="time" value="{{.ObservedAt.Time.Format `15:04`}}" step="60" /></td>
   <td><input form="bpo-{{.ID}}" name="irregular" type="checkbox" {{if .Irregular}}checked{{end}} /></td>
   <td><input form="bpo-{{.ID}}" name="systolic" type="number" value="{{.Systolic}}" /></td>
   <td><input form="bpo-{{.ID}}" name="diastolic" type="number" value="{{.Diastolic}}" /></td>
@@ -10,9 +11,9 @@
   <td><input form="bpo-{{.ID}}" name="comment" type="text" value="{{.Comment}}" /></td>
   <td>
     <fieldset class="grid">
-      <button class="secondary" form="bpo-{{.ID}}" type="submit">SAVE</button>
-      <button class="secondary" form="bpo-{{.ID}}" type="submit" formaction="/{{.ID}}/delete"
-        aria-label="delete">DELETE</button>
+      <button aria-label="Save" class="secondary" form="bpo-{{.ID}}" type="submit"><i class="ti ti-check"></i></button>
+      <button aria-label="Delete" class="secondary" form="bpo-{{.ID}}" type="submit" formaction="/{{.ID}}/delete"
+        aria-label="delete"><i class="ti ti-trash"></i></button>
     </fieldset>
   </td>
 </tr>
@@ -21,7 +22,8 @@
 {{define "bpo-row"}}
 <tr>
   <td hidden></td>
-  <td>{{.ObservedAt.Time.Format `2006-01-02T15:04`}}</td>
+  <td>{{.ObservedAt.Time.Format `Mon. 02 January 2006`}}</td>
+  <td>{{.ObservedAt.Time.Format `15:04`}}</td>
   <td><input type="checkbox" {{if .Irregular}}checked{{end}} disabled /></td>
   <td>{{.Systolic}}</td>
   <td>{{.Diastolic}}</td>
@@ -55,6 +57,7 @@
 
     <colgroup>
       <col class="id-col">
+      <col class="date-col">
       <col class="time-col">
       <col class="irregular-col">
       <col class="systolic-col">
@@ -67,8 +70,9 @@
       <thead>
         <tr>
           <th hidden>ID</th>
+          <th>Date</th>
           <th>Time</th>
-          <th aria-label="irregular">🗲</th>
+          <th aria-label="irregular heartbeat"><i class="ti ti-heart-bolt"></i></th>
           <th>Systolic</th>
           <th>Diastolic</th>
           <th>Pulse</th>
@@ -104,7 +108,7 @@
             </div>
             <div>
               <label for="time">Time</label>
-              <input id="bpo-new-time" name="time" type="time" />
+              <input id="bpo-new-time" name="time" type="time" step="60" />
             </div>
           </fieldset>
           <fieldset class="grid">
