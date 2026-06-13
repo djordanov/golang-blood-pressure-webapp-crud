@@ -67,10 +67,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Executing postHandler()")
 	log.Println(r.URL)
 
-	datetimestr := r.PostFormValue("observedAt")
-	if datetimestr == "" {
-		datetimestr = r.PostFormValue("date") + "T" + r.PostFormValue("time")
-	}
+	datetimestr := r.PostFormValue("date") + "T" + r.PostFormValue("time")
 	log.Println(datetimestr)
 	observedAt, err := time.Parse("2006-01-02T15:04", datetimestr) // local time from the users perspective, do not track timezone or convert
 	if err != nil {
