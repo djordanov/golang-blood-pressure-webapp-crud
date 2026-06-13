@@ -6,3 +6,11 @@ function setDefaultDateTime() {
     = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
 }
 
+// Close modal when clicking outside (on the backdrop)
+document.addEventListener('click', (event) => {
+  const modal = document.querySelector('#add-new-bpo-dialog');
+  if (modal && modal.open && event.target === modal) {
+    modal.close();
+  }
+});
+
