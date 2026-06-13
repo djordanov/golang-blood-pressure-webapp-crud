@@ -3,6 +3,10 @@ th {
   padding: 0.5rem 0.75rem;
 }
 
+input[type="checkbox"] {
+  margin-bottom: var(--pico-spacing);
+}
+
 .date-col {
   width: 16rem;
 }
@@ -21,4 +25,9 @@ th {
 
 .pulse-col {
   width: 5rem;
+}
+
+.action-col {
+  display: flex;
+  gap: 0.5rem;
 }
