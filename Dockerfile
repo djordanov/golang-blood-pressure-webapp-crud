@@ -8,10 +8,8 @@ RUN go mod download
 
 # copy and build application
 COPY . .
-RUN go build -v -o /bin/bpo .
+RUN go build .
 
 EXPOSE 8080
 
-CMD ["ls /bin"]
-CMD ["ls /bin/bpo"]
-CMD ["/bin/bpo"]
+CMD ["/bpo"]

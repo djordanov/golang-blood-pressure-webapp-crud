@@ -14,16 +14,8 @@
       # Generate a user-friendly version number.
       version = builtins.substring 0 9 lastModifiedDate;
 
-      # System types to support.
-      supportedSystems = [
-        "x86_64-linux"
-        "x86_64-darwin"
-        "aarch64-linux"
-        "aarch64-darwin"
-      ];
-
       # Helper function to generate an attrset '{ x86_64-linux = f "x86_64-linux"; ... }'.
-      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
+      forAllSystems = nixpkgs.lib.genAttrs [ "x86_64-linux" ];
 
       # Nixpkgs instantiated for supported system types.
       nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; });
@@ -53,9 +45,7 @@
             # it should be "out-of-band" with other tooling (eg. gomod2nix).
             # To begin with it is recommended to set this, but one must
             # remember to bump this hash when your dependencies change.
-            vendorHash = pkgs.lib.fakeHash;
-
-            # vendorHash = "sha256-pQpattmS9VmO3ZIQUFn66az8GSmB4IvYhTTCFn6SUmo=";
+            vendorHash = "sha256-xDIoz3NYvZSljEL2/MdrRE38z5NuxOYTDa5Xy2zbk50=";
           };
         }
       );

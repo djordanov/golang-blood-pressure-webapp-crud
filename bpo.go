@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bpo/bpo" // generated code via sqlc
+	"bpo/sqlc/bpo" // generated code via sqlc
 	"context"
 	"fmt"
 	"html/template"
