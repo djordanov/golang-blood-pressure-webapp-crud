@@ -160,8 +160,20 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
-	slog.Info("Starting program...")
 	ctx := context.Background()
+
+	logLevel := slog.LevelInfo
+	if getEnv("ENVIRONMENT", "development") == "development" {
+		logLevel = slog.LevelDebug
+	}
+	logger := slog.New(
+		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			Level: logLevel,
+		}),
+	)
+	slog.SetDefault(logger)
+
+	slog.Info("Starting program...")
 
 	slog.Info("Connecting to database...")
 	connStr := fmt.Sprintf(
