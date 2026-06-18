@@ -66,12 +66,13 @@
               go-tools
               delve
               air
+              postgres
             ];
 
           shellHook = ''
             echo "Entered Flake"
             fish
-            fish .env.fish
+            source .env.fish
           '';
 
           };
