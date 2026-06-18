@@ -23,7 +23,11 @@ type TemplateContext struct {
 	Editable bool
 }
 
-var templates = template.Must(template.ParseFiles("bpos.html"))
+var templates = template.Must(template.ParseFiles(
+	"bpos.html",
+	"bpo-row.html",
+	"bpo-row-editable.html",
+))
 
 func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Executing getHandler()")
