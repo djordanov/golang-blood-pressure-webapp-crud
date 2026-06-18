@@ -65,12 +65,13 @@
               gotools
               go-tools
               delve
-              litecli
+              air
             ];
 
           shellHook = ''
             echo "Entered Flake"
             fish
+            fish .env.fish
           '';
 
           };
