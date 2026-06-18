@@ -4,15 +4,14 @@ import (
 	"bpo/sqlc/bpo" // generated code via sqlc
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"html/template"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Server struct {
@@ -27,7 +26,7 @@ type TemplateContext struct {
 var templates = template.Must(template.ParseFiles("bpos.html"))
 
 func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Executing getHandler()")
+	slog.Debug("Executing getHandler()")
 
 	editableString := r.FormValue("editable")
 	editable, err := strconv.ParseBool(editableString)
@@ -47,7 +46,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Executing deleteHandler()")
+	slog.Debug("Executing deleteHandler()")
 
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
@@ -64,11 +63,8 @@ func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Executing postHandler()")
-	log.Println(r.URL)
-
+	slog.Debug("Parsing POST arguments...")
 	datetimestr := r.PostFormValue("date") + "T" + r.PostFormValue("time")
-	log.Println(datetimestr)
 	observedAt, err := time.Parse("2006-01-02T15:04", datetimestr) // local time from the users perspective, do not track timezone or convert
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -94,25 +90,29 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 	var id int = 0
 	if idPath := r.PathValue("id"); idPath != "" {
-		log.Println(r.PathValue("Detected ID in URL. Converting to int..."))
+		slog.Debug("Detected ID in URL. Converting to int...", "idPath", idPath)
 		id, err = strconv.Atoi(idPath)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	}
-
-	log.Printf(
-		"Parsed id=%d systolic=%d, diastolic=%d, pulse=%d, irregular=%s comment=%s\n",
+	slog.Debug(
+		"Parsed POST arguments",
+		"id",
 		id,
+		"systolic",
 		systolic,
+		"diastolic",
 		diastolic,
+		"pulse",
 		pulse,
+		"irregular",
 		irregular,
+		"comment",
 		comment,
 	)
 
 	if id == 0 {
-		log.Println("Creating new observation...")
 		observation := bpo.CreateBloodPressureObservationParams{
 			ObservedAt: pgtype.Timestamp{Time: observedAt, Valid: true},
 			Systolic:   int32(systolic),
@@ -122,14 +122,14 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			Comment:    comment,
 		}
 
-		log.Println(observation)
+		slog.Debug("Creating new observation", "observation", observation)
 		_, err = s.queries.CreateBloodPressureObservation(r.Context(), observation)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		slog.Debug("Created new observation", "observation", observation)
 	} else {
-		log.Println("Updating observation...")
 		observation := bpo.UpdateBloodPressureObservationParams{
 			ObservedAt: pgtype.Timestamp{Time: observedAt, Valid: true},
 			ID:         int32(id),
@@ -140,12 +140,13 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 			Comment:    comment,
 		}
 
-		log.Println(observation)
+		slog.Debug("Updating observation", "observation", observation)
 		_, err = s.queries.UpdateBloodPressureObservation(r.Context(), observation)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		slog.Debug("Updated observation", "observation", observation)
 	}
 
 	http.Redirect(w, r, "/", 303)
@@ -159,7 +160,10 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
+	slog.Info("Starting program...")
 	ctx := context.Background()
+
+	slog.Info("Connecting to database...")
 	connStr := fmt.Sprintf(
 		"host=%s port=5432 user=%s password=%s dbname=%s sslmode=disable",
 		getEnv("POSTGRES_HOST", "localhost"),
@@ -169,17 +173,21 @@ func main() {
 	)
 	db, err := pgx.Connect(ctx, connStr)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error(err.Error())
+		panic(err)
 	}
 	defer db.Close(ctx)
 	db.Ping(ctx)
 	queries := bpo.New(db)
 	server := &Server{queries: queries}
 
+	slog.Info("Attaching HTTP handlers...")
 	http.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	http.HandleFunc("GET /", server.getHandler)
 	http.HandleFunc("POST /{id}/delete", server.deleteHandler)
 	http.HandleFunc("POST /{id}/update", server.postHandler)
 	http.HandleFunc("POST /", server.postHandler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+
+	slog.Info("Starting server...")
+	http.ListenAndServe(":8080", nil)
 }
