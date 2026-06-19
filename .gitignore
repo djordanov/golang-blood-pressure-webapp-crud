@@ -4,3 +4,4 @@ bpo-server
 bpo/
 .env
 .env.fish
+tmp/

@@ -66,7 +66,6 @@
               go-tools
               delve
               air
-              postgres
             ];
 
           shellHook = ''
