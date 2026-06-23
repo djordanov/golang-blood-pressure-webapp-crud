@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/oauth2"
@@ -21,6 +22,11 @@ import (
 
 type Server struct {
 	queries *bpo.Queries
+}
+
+type Session struct {
+	id              string
+	authenticatedAt time.Time
 }
 
 type TemplateContext struct {
@@ -41,6 +47,8 @@ var googleOauthConfig = &oauth2.Config{
 	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
 	Endpoint:     google.Endpoint,
 }
+
+var sessions = make(map[string]Session)
 
 func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Executing getHandler()")
@@ -209,7 +217,24 @@ func (s *Server) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "UserInfo: %s\n", userInfo)
+	sessionId := uuid.NewString()
+	session := Session{
+		id:              sessionId,
+		authenticatedAt: time.Now().UTC(),
+	}
+	sessions[sessionId] = session
+
+	cookie :=
+		http.Cookie{
+			Name:     "bpo-session",
+			Value:    sessionId,
+			Expires:  time.Now().Add(24 * time.Hour),
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		}
+	http.SetCookie(w, &cookie)
+	slog.Info("Successfully logged in", "email", userInfo.Email)
 }
 
 func (s *Server) oauthGoogleLogin(w http.ResponseWriter, r *http.Request) {
