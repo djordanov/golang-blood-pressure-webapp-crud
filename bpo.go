@@ -230,6 +230,13 @@ func generateStateOauthCookie(w http.ResponseWriter) string {
 	return state
 }
 
+func loggingMiddleWare(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Received requst", "method", r.Method, "url", r.URL)
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -265,14 +272,15 @@ func main() {
 	server := &Server{queries: queries}
 
 	slog.Info("Attaching HTTP handlers...")
-	http.HandleFunc("GET /auth/google/login", server.oauthGoogleLogin)
-	http.HandleFunc("GET /auth/google/callback", server.oauthGoogleCallback)
-	http.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	http.HandleFunc("GET /", server.getHandler)
-	http.HandleFunc("POST /{id}/delete", server.deleteHandler)
-	http.HandleFunc("POST /{id}/update", server.postHandler)
-	http.HandleFunc("POST /", server.postHandler)
+	router := http.NewServeMux()
+	router.Handle("GET /auth/google/login", http.HandlerFunc(server.oauthGoogleLogin))
+	router.Handle("GET /auth/google/callback", http.HandlerFunc(server.oauthGoogleCallback))
+	router.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	router.Handle("GET /", http.HandlerFunc(server.getHandler))
+	router.Handle("POST /{id}/delete", http.HandlerFunc(server.deleteHandler))
+	router.Handle("POST /{id}/update", http.HandlerFunc(server.postHandler))
+	router.Handle("POST /", http.HandlerFunc(server.postHandler))
 
 	slog.Info("Starting server...")
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", loggingMiddleWare(router))
 }
