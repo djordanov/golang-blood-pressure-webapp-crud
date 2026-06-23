@@ -228,13 +228,15 @@ func (s *Server) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		http.Cookie{
 			Name:     "bpo-session",
 			Value:    sessionId,
+			Path:     "/",
 			Expires:  time.Now().Add(24 * time.Hour),
-			Secure:   true,
+			Secure:   false,
 			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
 		}
 	http.SetCookie(w, &cookie)
 	slog.Info("Successfully logged in", "email", userInfo.Email)
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
 func (s *Server) oauthGoogleLogin(w http.ResponseWriter, r *http.Request) {
@@ -257,7 +259,33 @@ func generateStateOauthCookie(w http.ResponseWriter) string {
 
 func loggingMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("Received requst", "method", r.Method, "url", r.URL)
+		slog.Info("Received request", "method", r.Method, "url", r.URL)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func loginMiddleWare(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("bpo-session")
+		slog.Debug("Read session cookie", "cookie", cookie)
+		if err != nil {
+			http.Redirect(w, r, "/auth/google/login", http.StatusTemporaryRedirect)
+			return
+		}
+
+		session, exists := sessions[cookie.Value]
+		slog.Debug("Read session", "session", session)
+		if !exists {
+			http.Redirect(w, r, "/auth/google/login", http.StatusTemporaryRedirect)
+			return
+		}
+
+		slog.Debug("Checking session authentication", "authenticatedAt", session.authenticatedAt)
+		if session.authenticatedAt.Add(24 * time.Hour).Before(time.Now()) {
+			http.Redirect(w, r, "/auth/google/login", http.StatusTemporaryRedirect)
+			return
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -301,10 +329,10 @@ func main() {
 	router.Handle("GET /auth/google/login", http.HandlerFunc(server.oauthGoogleLogin))
 	router.Handle("GET /auth/google/callback", http.HandlerFunc(server.oauthGoogleCallback))
 	router.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	router.Handle("GET /", http.HandlerFunc(server.getHandler))
-	router.Handle("POST /{id}/delete", http.HandlerFunc(server.deleteHandler))
-	router.Handle("POST /{id}/update", http.HandlerFunc(server.postHandler))
-	router.Handle("POST /", http.HandlerFunc(server.postHandler))
+	router.Handle("GET /", loginMiddleWare(http.HandlerFunc(server.getHandler)))
+	router.Handle("POST /{id}/delete", loginMiddleWare(http.HandlerFunc(server.deleteHandler)))
+	router.Handle("POST /{id}/update", loginMiddleWare(http.HandlerFunc(server.postHandler)))
+	router.Handle("POST /", loginMiddleWare(http.HandlerFunc(server.postHandler)))
 
 	slog.Info("Starting server...")
 	http.ListenAndServe(":8080", loggingMiddleWare(router))
