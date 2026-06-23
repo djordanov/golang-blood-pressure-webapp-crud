@@ -3,9 +3,14 @@ package main
 import (
 	"bpo/sqlc/bpo" // generated code via sqlc
 	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -28,6 +33,14 @@ var templates = template.Must(template.ParseFiles(
 	"bpo-row.html",
 	"bpo-row-editable.html",
 ))
+
+var googleOauthConfig = &oauth2.Config{
+	RedirectURL:  "http://localhost:8080/auth/google/callback",
+	ClientID:     os.Getenv("GOOGLE_OAUTH_CLIENT_ID"),
+	ClientSecret: os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
+	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
+	Endpoint:     google.Endpoint,
+}
 
 func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Executing getHandler()")
@@ -163,6 +176,60 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+func (s *Server) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
+	oauthState, _ := r.Cookie("oauthstate")
+
+	if r.FormValue("state") != oauthState.Value {
+		slog.Info("invalid oauth google state")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	token, err := googleOauthConfig.Exchange(context.Background(), r.FormValue("code"))
+	if err != nil {
+		http.Error(w, "failed code exchange", http.StatusInternalServerError)
+		return
+	}
+
+	response, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
+	if err != nil {
+		http.Error(w, "failed getting user info", http.StatusInternalServerError)
+	}
+	defer response.Body.Close()
+
+	var userInfo struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&userInfo); err != nil {
+		http.Error(w, "failed read response", http.StatusInternalServerError)
+	}
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "UserInfo: %s\n", userInfo)
+}
+
+func (s *Server) oauthGoogleLogin(w http.ResponseWriter, r *http.Request) {
+	oauthState := generateStateOauthCookie(w)
+	url := googleOauthConfig.AuthCodeURL(oauthState)
+	slog.Info("Redirecting to ", "url", url)
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+}
+
+func generateStateOauthCookie(w http.ResponseWriter) string {
+	var expiration = time.Now().Add(365 * 24 * time.Hour)
+	b := make([]byte, 16)
+	rand.Read(b)
+	state := base64.URLEncoding.EncodeToString(b)
+	cookie := http.Cookie{Name: "oauthstate", Value: state, Expires: expiration}
+	http.SetCookie(w, &cookie)
+
+	return state
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -198,6 +265,8 @@ func main() {
 	server := &Server{queries: queries}
 
 	slog.Info("Attaching HTTP handlers...")
+	http.HandleFunc("GET /auth/google/login", server.oauthGoogleLogin)
+	http.HandleFunc("GET /auth/google/callback", server.oauthGoogleCallback)
 	http.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	http.HandleFunc("GET /", server.getHandler)
 	http.HandleFunc("POST /{id}/delete", server.deleteHandler)
