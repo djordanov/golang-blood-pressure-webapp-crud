@@ -27,6 +27,7 @@ type Server struct {
 type Session struct {
 	id              string
 	authenticatedAt time.Time
+	email string
 }
 
 type TemplateContext struct {
@@ -185,7 +186,12 @@ func getEnv(key, fallback string) string {
 }
 
 func (s *Server) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
-	oauthState, _ := r.Cookie("oauthstate")
+	oauthState, err := r.Cookie("oauthstate")
+	if err != nil {
+		slog.Warning("oauthstate cookie missing")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
 
 	if r.FormValue("state") != oauthState.Value {
 		slog.Info("invalid oauth google state")
@@ -199,7 +205,8 @@ func (s *Server) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
+	client := googleOauthConfig.Client(context.Background(), token)
+	response, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo)
 	if err != nil {
 		http.Error(w, "failed getting user info", http.StatusInternalServerError)
 	}
@@ -221,6 +228,7 @@ func (s *Server) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	session := Session{
 		id:              sessionId,
 		authenticatedAt: time.Now().UTC(),
+		email: userInfo.Email,
 	}
 	sessions[sessionId] = session
 
@@ -251,7 +259,14 @@ func generateStateOauthCookie(w http.ResponseWriter) string {
 	b := make([]byte, 16)
 	rand.Read(b)
 	state := base64.URLEncoding.EncodeToString(b)
-	cookie := http.Cookie{Name: "oauthstate", Value: state, Expires: expiration}
+	cookie := http.Cookie{
+		Name: "oauthstate",
+		Value: state,
+		Expires: expiration,
+		Secure:   false,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
 	http.SetCookie(w, &cookie)
 
 	return state
