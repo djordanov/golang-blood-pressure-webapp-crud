@@ -70,8 +70,6 @@
 
           shellHook = ''
             echo "Entered Flake"
-            fish
-            source .env.fish
           '';
 
           };

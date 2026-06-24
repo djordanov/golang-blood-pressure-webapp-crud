@@ -5,3 +5,4 @@ bpo/
 .env
 .env.fish
 tmp/
+.direnv/
