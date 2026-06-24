@@ -27,7 +27,7 @@ type Server struct {
 type Session struct {
 	id              string
 	authenticatedAt time.Time
-	email string
+	email           string
 }
 
 type TemplateContext struct {
@@ -68,6 +68,7 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	err = templates.ExecuteTemplate(w, "bpos.html", templateContext)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -77,6 +78,7 @@ func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = s.queries.DeleteBloodPressureObservation(r.Context(), int32(id))
@@ -120,6 +122,7 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 		id, err = strconv.Atoi(idPath)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 	}
 	slog.Debug(
@@ -188,7 +191,7 @@ func getEnv(key, fallback string) string {
 func (s *Server) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	oauthState, err := r.Cookie("oauthstate")
 	if err != nil {
-		slog.Warning("oauthstate cookie missing")
+		slog.Warn("oauthstate cookie missing")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
@@ -199,16 +202,17 @@ func (s *Server) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := googleOauthConfig.Exchange(context.Background(), r.FormValue("code"))
+	token, err := googleOauthConfig.Exchange(r.Context(), r.FormValue("code"))
 	if err != nil {
 		http.Error(w, "failed code exchange", http.StatusInternalServerError)
 		return
 	}
 
-	client := googleOauthConfig.Client(context.Background(), token)
-	response, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo)
+	client := googleOauthConfig.Client(r.Context(), token)
+	response, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 	if err != nil {
 		http.Error(w, "failed getting user info", http.StatusInternalServerError)
+		return
 	}
 	defer response.Body.Close()
 
@@ -217,10 +221,6 @@ func (s *Server) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(response.Body).Decode(&userInfo); err != nil {
 		http.Error(w, "failed read response", http.StatusInternalServerError)
-	}
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -228,7 +228,7 @@ func (s *Server) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	session := Session{
 		id:              sessionId,
 		authenticatedAt: time.Now().UTC(),
-		email: userInfo.Email,
+		email:           userInfo.Email,
 	}
 	sessions[sessionId] = session
 
@@ -255,14 +255,14 @@ func (s *Server) oauthGoogleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func generateStateOauthCookie(w http.ResponseWriter) string {
-	var expiration = time.Now().Add(365 * 24 * time.Hour)
+	var expiration = time.Now().Add(10 * time.Minute)
 	b := make([]byte, 16)
 	rand.Read(b)
 	state := base64.URLEncoding.EncodeToString(b)
 	cookie := http.Cookie{
-		Name: "oauthstate",
-		Value: state,
-		Expires: expiration,
+		Name:     "oauthstate",
+		Value:    state,
+		Expires:  expiration,
 		Secure:   false,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
