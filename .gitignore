@@ -1,9 +1,7 @@
 bpo-server
-*.db
 *.log
-bpo/
 .env
-.env.fish
 tmp/
 .direnv/
-bpo
+/bpo
+/result
