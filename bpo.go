@@ -3,6 +3,7 @@ package main
 import (
 	"bpo/sqlc/bpo" // generated code via sqlc
 	"context"
+	"encoding/csv"
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -30,8 +31,6 @@ var templates = template.Must(template.ParseFiles(
 ))
 
 func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("Executing getHandler()")
-
 	editableString := r.FormValue("editable")
 	editable, err := strconv.ParseBool(editableString)
 
@@ -50,9 +49,55 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("Executing deleteHandler()")
+func (s *Server) exportHandler(w http.ResponseWriter, r *http.Request) {
+	bpos, err := s.queries.GetBloodPressureObservations(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
+	slog.Debug("Fetched bpos, writing csv")
+	writer := csv.NewWriter(w)
+	writer.Comma = ';'
+	err = writer.Write([]string{
+		"ObservedAt",
+		"Irregular Heartbeat",
+		"Systolic",
+		"Diastolic",
+		"Pulse",
+		"Comment",
+	})
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	for _, bpo := range bpos {
+		err = writer.Write([]string{
+			bpo.ObservedAt.Time.Format("2006-01-02 15:04"),
+			strconv.FormatBool(bpo.Irregular),
+			strconv.Itoa(int(bpo.Systolic)),
+			strconv.Itoa(int(bpo.Diastolic)),
+			strconv.Itoa(int(bpo.Pulse)),
+			bpo.Comment,
+		})
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	slog.Debug("Setting csv headers...")
+	w.Header().Set("Content-Disposition", "attachment; filename=blood_pressure.csv")
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Transfer-Encoding", "chunked")
+
+	writer.Flush()
+}
+
+func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -212,6 +257,7 @@ func main() {
 	router.Handle("GET /auth/google/login", http.HandlerFunc(oauthGoogleLogin))
 	router.Handle("GET /auth/google/callback", http.HandlerFunc(oauthGoogleCallback))
 	router.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	router.Handle("GET /export", loginMiddleWare(http.HandlerFunc(server.exportHandler)))
 	router.Handle("GET /", loginMiddleWare(http.HandlerFunc(server.getHandler)))
 	router.Handle("POST /{id}/delete", loginMiddleWare(http.HandlerFunc(server.deleteHandler)))
 	router.Handle("POST /{id}/update", loginMiddleWare(http.HandlerFunc(server.postHandler)))
