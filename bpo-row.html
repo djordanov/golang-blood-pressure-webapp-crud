@@ -1,8 +1,8 @@
 {{define "bpo-row"}}
 <tr>
   <td hidden></td>
-  <td>{{.ObservedAt.Time.Format `Mon. 02 January 2006`}}</td>
-  <td>{{.ObservedAt.Time.Format `15:04`}}</td>
+  <td>{{.ObservedAt.Format `Mon. 02 January 2006`}}</td>
+  <td>{{.ObservedAt.Format `15:04`}}</td>
   <td>{{if .Irregular}}<i class="ti ti-bolt"></i>{{end}}</td>
   <td>{{.Systolic}}</td>
   <td>{{.Diastolic}}</td>

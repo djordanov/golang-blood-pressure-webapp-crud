@@ -7,25 +7,27 @@ package bpo
 
 import (
 	"context"
+	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 )
 
 const createBloodPressureObservation = `-- name: CreateBloodPressureObservation :one
 INSERT INTO blood_pressure_observation
-    (observed_at, systolic, diastolic, pulse, irregular, comment)
+    (observed_at, systolic, diastolic, pulse, irregular, comment, person_id)
 VALUES
-    ($1, $2, $3, $4, $5, $6)
-RETURNING id, observed_at, systolic, diastolic, pulse, irregular, comment
+    ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, person_id, observed_at, systolic, diastolic, pulse, irregular, comment
 `
 
 type CreateBloodPressureObservationParams struct {
-	ObservedAt pgtype.Timestamp
-	Systolic   int32
-	Diastolic  int32
-	Pulse      int32
+	ObservedAt time.Time
+	Systolic   int
+	Diastolic  int
+	Pulse      int
 	Irregular  bool
 	Comment    string
+	PersonID   int
 }
 
 func (q *Queries) CreateBloodPressureObservation(ctx context.Context, arg CreateBloodPressureObservationParams) (BloodPressureObservation, error) {
@@ -36,10 +38,12 @@ func (q *Queries) CreateBloodPressureObservation(ctx context.Context, arg Create
 		arg.Pulse,
 		arg.Irregular,
 		arg.Comment,
+		arg.PersonID,
 	)
 	var i BloodPressureObservation
 	err := row.Scan(
 		&i.ID,
+		&i.PersonID,
 		&i.ObservedAt,
 		&i.Systolic,
 		&i.Diastolic,
@@ -50,13 +54,58 @@ func (q *Queries) CreateBloodPressureObservation(ctx context.Context, arg Create
 	return i, err
 }
 
+const createPerson = `-- name: CreatePerson :one
+INSERT INTO person
+    (email, created_at)
+VALUES ($1, $2)
+RETURNING id, email, created_at
+`
+
+type CreatePersonParams struct {
+	Email     string
+	CreatedAt time.Time
+}
+
+func (q *Queries) CreatePerson(ctx context.Context, arg CreatePersonParams) (Person, error) {
+	row := q.db.QueryRow(ctx, createPerson, arg.Email, arg.CreatedAt)
+	var i Person
+	err := row.Scan(&i.ID, &i.Email, &i.CreatedAt)
+	return i, err
+}
+
+const createSession = `-- name: CreateSession :one
+INSERT INTO session
+    (id, person_id, expires_at)
+VALUES ($1, $2, $3)
+RETURNING id, person_id, expires_at
+`
+
+type CreateSessionParams struct {
+	ID        uuid.UUID
+	PersonID  int
+	ExpiresAt time.Time
+}
+
+func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error) {
+	row := q.db.QueryRow(ctx, createSession, arg.ID, arg.PersonID, arg.ExpiresAt)
+	var i Session
+	err := row.Scan(&i.ID, &i.PersonID, &i.ExpiresAt)
+	return i, err
+}
+
 const deleteBloodPressureObservation = `-- name: DeleteBloodPressureObservation :exec
 DELETE FROM blood_pressure_observation
 WHERE id = $1
+    AND person_id = $2
 `
 
-func (q *Queries) DeleteBloodPressureObservation(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, deleteBloodPressureObservation, id)
+type DeleteBloodPressureObservationParams struct {
+	ID       int
+	PersonID int
+}
+
+func (q *Queries) DeleteBloodPressureObservation(ctx context.Context, arg DeleteBloodPressureObservationParams) error {
+	_, err := q.db.Exec(ctx, deleteBloodPressureObservation, arg.ID, arg.PersonID)
 	return err
 }
 
@@ -70,17 +119,28 @@ SELECT
     irregular,
     comment
 FROM blood_pressure_observation
+WHERE person_id = $1
 `
 
-func (q *Queries) GetBloodPressureObservations(ctx context.Context) ([]BloodPressureObservation, error) {
-	rows, err := q.db.Query(ctx, getBloodPressureObservations)
+type GetBloodPressureObservationsRow struct {
+	ID         int
+	ObservedAt time.Time
+	Systolic   int
+	Diastolic  int
+	Pulse      int
+	Irregular  bool
+	Comment    string
+}
+
+func (q *Queries) GetBloodPressureObservations(ctx context.Context, personID int) ([]GetBloodPressureObservationsRow, error) {
+	rows, err := q.db.Query(ctx, getBloodPressureObservations, personID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []BloodPressureObservation
+	var items []GetBloodPressureObservationsRow
 	for rows.Next() {
-		var i BloodPressureObservation
+		var i GetBloodPressureObservationsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ObservedAt,
@@ -100,6 +160,38 @@ func (q *Queries) GetBloodPressureObservations(ctx context.Context) ([]BloodPres
 	return items, nil
 }
 
+const getPersonByEmail = `-- name: GetPersonByEmail :one
+SELECT
+    id,
+    email,
+    created_at
+FROM person
+WHERE email = $1
+`
+
+func (q *Queries) GetPersonByEmail(ctx context.Context, email string) (Person, error) {
+	row := q.db.QueryRow(ctx, getPersonByEmail, email)
+	var i Person
+	err := row.Scan(&i.ID, &i.Email, &i.CreatedAt)
+	return i, err
+}
+
+const getSessionById = `-- name: GetSessionById :one
+SELECT
+    id,
+    person_id,
+    expires_at
+FROM session
+WHERE id = $1
+`
+
+func (q *Queries) GetSessionById(ctx context.Context, id uuid.UUID) (Session, error) {
+	row := q.db.QueryRow(ctx, getSessionById, id)
+	var i Session
+	err := row.Scan(&i.ID, &i.PersonID, &i.ExpiresAt)
+	return i, err
+}
+
 const updateBloodPressureObservation = `-- name: UpdateBloodPressureObservation :one
 UPDATE blood_pressure_observation
 SET
@@ -110,17 +202,19 @@ SET
     irregular = $5,
     comment = $6
 WHERE id = $7
-RETURNING id, observed_at, systolic, diastolic, pulse, irregular, comment
+    AND person_id = $8
+RETURNING id, person_id, observed_at, systolic, diastolic, pulse, irregular, comment
 `
 
 type UpdateBloodPressureObservationParams struct {
-	ObservedAt pgtype.Timestamp
-	Systolic   int32
-	Diastolic  int32
-	Pulse      int32
+	ObservedAt time.Time
+	Systolic   int
+	Diastolic  int
+	Pulse      int
 	Irregular  bool
 	Comment    string
-	ID         int32
+	ID         int
+	PersonID   int
 }
 
 func (q *Queries) UpdateBloodPressureObservation(ctx context.Context, arg UpdateBloodPressureObservationParams) (BloodPressureObservation, error) {
@@ -132,10 +226,12 @@ func (q *Queries) UpdateBloodPressureObservation(ctx context.Context, arg Update
 		arg.Irregular,
 		arg.Comment,
 		arg.ID,
+		arg.PersonID,
 	)
 	var i BloodPressureObservation
 	err := row.Scan(
 		&i.ID,
+		&i.PersonID,
 		&i.ObservedAt,
 		&i.Systolic,
 		&i.Diastolic,

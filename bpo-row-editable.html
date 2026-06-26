@@ -1,9 +1,9 @@
 {{define "bpo-row-editable"}}
 <tr>
   <td hidden><input form="bpo-{{.ID}}" name="id" type="number" value="{{.ID}}" disabled /></td>
-  <td><input form="bpo-{{.ID}}" name="date" type="date" value="{{.ObservedAt.Time.Format `2006-01-02`}}" />
+  <td><input form="bpo-{{.ID}}" name="date" type="date" value="{{.ObservedAt.Format `2006-01-02`}}" />
   </td>
-  <td><input form="bpo-{{.ID}}" name="time" type="time" value="{{.ObservedAt.Time.Format `15:04`}}" step="60" /></td>
+  <td><input form="bpo-{{.ID}}" name="time" type="time" value="{{.ObservedAt.Format `15:04`}}" step="60" /></td>
   <td><input form="bpo-{{.ID}}" name="irregular" type="checkbox" {{if .Irregular}}checked{{end}} /></td>
   <td><input form="bpo-{{.ID}}" name="systolic" type="number" value="{{.Systolic}}" /></td>
   <td><input form="bpo-{{.ID}}" name="diastolic" type="number" value="{{.Diastolic}}" /></td>

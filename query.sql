@@ -1,23 +1,32 @@
 -- name: GetSessionById :one
 SELECT
     id,
-    user,
+    person_id,
     expires_at
 FROM session
 WHERE id = $1
 ;
 
--- name: CreateUser :one
-INSERT INTO user
-    (email, created_at)
-VALUES ($1, $2)
+-- name: CreateSession :one
+INSERT INTO session
+    (id, person_id, expires_at)
+VALUES ($1, $2, $3)
 RETURNING *
 ;
 
--- name: CreateSession :one
-INSERT INTO session
-    (id, user, expires_at)
-VALUES ($1, $2, $3)
+-- name: GetPersonByEmail :one
+SELECT
+    id,
+    email,
+    created_at
+FROM person
+WHERE email = $1
+;
+
+-- name: CreatePerson :one
+INSERT INTO person
+    (email, created_at)
+VALUES ($1, $2)
 RETURNING *
 ;
 
@@ -31,12 +40,12 @@ SELECT
     irregular,
     comment
 FROM blood_pressure_observation
-WHERE user = $1
+WHERE person_id = $1
 ;
 
 -- name: CreateBloodPressureObservation :one
 INSERT INTO blood_pressure_observation
-    (observed_at, systolic, diastolic, pulse, irregular, comment, user)
+    (observed_at, systolic, diastolic, pulse, irregular, comment, person_id)
 VALUES
     ($1, $2, $3, $4, $5, $6, $7)
 RETURNING *
@@ -52,12 +61,12 @@ SET
     irregular = $5,
     comment = $6
 WHERE id = $7
-    AND user = $8
+    AND person_id = $8
 RETURNING *
 ;
 
 -- name: DeleteBloodPressureObservation :exec
 DELETE FROM blood_pressure_observation
 WHERE id = $1
-    AND user = $2
+    AND person_id = $2
 ;

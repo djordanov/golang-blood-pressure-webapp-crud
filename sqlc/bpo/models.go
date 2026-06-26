@@ -5,15 +5,30 @@
 package bpo
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type BloodPressureObservation struct {
-	ID         int32
-	ObservedAt pgtype.Timestamp
-	Systolic   int32
-	Diastolic  int32
-	Pulse      int32
+	ID         int
+	PersonID   int
+	ObservedAt time.Time
+	Systolic   int
+	Diastolic  int
+	Pulse      int
 	Irregular  bool
 	Comment    string
+}
+
+type Person struct {
+	ID        int
+	Email     string
+	CreatedAt time.Time
+}
+
+type Session struct {
+	ID        uuid.UUID
+	PersonID  int
+	ExpiresAt time.Time
 }

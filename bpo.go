@@ -6,7 +6,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -15,12 +14,12 @@ import (
 	"time"
 )
 
-type Server struct {
+type DbConn struct {
 	queries *bpo.Queries
 }
 
 type TemplateContext struct {
-	Bpos     []bpo.BloodPressureObservation
+	Bpos     []bpo.GetBloodPressureObservationsRow
 	Editable bool
 }
 
@@ -30,11 +29,12 @@ var templates = template.Must(template.ParseFiles(
 	"bpo-row-editable.html",
 ))
 
-func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
+func (s *DbConn) getHandler(w http.ResponseWriter, r *http.Request) {
 	editableString := r.FormValue("editable")
 	editable, err := strconv.ParseBool(editableString)
 
-	bpos, err := s.queries.GetBloodPressureObservations(r.Context())
+	personID := r.Context().Value("PersonID").(int)
+	bpos, err := s.queries.GetBloodPressureObservations(r.Context(), personID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -49,8 +49,9 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) exportHandler(w http.ResponseWriter, r *http.Request) {
-	bpos, err := s.queries.GetBloodPressureObservations(r.Context())
+func (s *DbConn) exportHandler(w http.ResponseWriter, r *http.Request) {
+	personID := r.Context().Value("PersonID").(int)
+	bpos, err := s.queries.GetBloodPressureObservations(r.Context(), personID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -75,7 +76,7 @@ func (s *Server) exportHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, bpo := range bpos {
 		err = writer.Write([]string{
-			bpo.ObservedAt.Time.Format("2006-01-02 15:04"),
+			bpo.ObservedAt.Format("2006-01-02 15:04"),
 			strconv.FormatBool(bpo.Irregular),
 			strconv.Itoa(int(bpo.Systolic)),
 			strconv.Itoa(int(bpo.Diastolic)),
@@ -97,14 +98,18 @@ func (s *Server) exportHandler(w http.ResponseWriter, r *http.Request) {
 	writer.Flush()
 }
 
-func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
+func (s *DbConn) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = s.queries.DeleteBloodPressureObservation(r.Context(), int32(id))
+	personID := r.Context().Value("PersonID").(int)
+	err = s.queries.DeleteBloodPressureObservation(r.Context(), bpo.DeleteBloodPressureObservationParams{
+		ID:       id,
+		PersonID: personID,
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -113,7 +118,9 @@ func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", 303)
 }
 
-func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
+func (s *DbConn) postHandler(w http.ResponseWriter, r *http.Request) {
+	personID := r.Context().Value("PersonID").(int)
+
 	slog.Debug("Parsing POST arguments...")
 	datetimestr := r.PostFormValue("date") + "T" + r.PostFormValue("time")
 	observedAt, err := time.Parse("2006-01-02T15:04", datetimestr) // local time from the users perspective, do not track timezone or convert
@@ -166,12 +173,13 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 
 	if id == 0 {
 		observation := bpo.CreateBloodPressureObservationParams{
-			ObservedAt: pgtype.Timestamp{Time: observedAt, Valid: true},
-			Systolic:   int32(systolic),
-			Diastolic:  int32(diastolic),
-			Pulse:      int32(pulse),
+			ObservedAt: observedAt,
+			Systolic:   systolic,
+			Diastolic:  diastolic,
+			Pulse:      pulse,
 			Irregular:  irregular,
 			Comment:    comment,
+			PersonID:   personID,
 		}
 
 		slog.Debug("Creating new observation", "observation", observation)
@@ -183,13 +191,14 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 		slog.Debug("Created new observation", "observation", observation)
 	} else {
 		observation := bpo.UpdateBloodPressureObservationParams{
-			ObservedAt: pgtype.Timestamp{Time: observedAt, Valid: true},
-			ID:         int32(id),
-			Systolic:   int32(systolic),
-			Diastolic:  int32(diastolic),
-			Pulse:      int32(pulse),
+			ObservedAt: observedAt,
+			ID:         id,
+			Systolic:   systolic,
+			Diastolic:  diastolic,
+			Pulse:      pulse,
 			Irregular:  irregular,
 			Comment:    comment,
+			PersonID:   personID,
 		}
 
 		slog.Debug("Updating observation", "observation", observation)
@@ -211,7 +220,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func loggingMiddleWare(next http.Handler) http.Handler {
+func logMid(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("Received request", "method", r.Method, "url", r.URL)
 		next.ServeHTTP(w, r)
@@ -250,19 +259,19 @@ func main() {
 	defer db.Close(ctx)
 	db.Ping(ctx)
 	queries := bpo.New(db)
-	server := &Server{queries: queries}
+	dbConn := &DbConn{queries: queries}
 
 	slog.Info("Attaching HTTP handlers...")
 	router := http.NewServeMux()
 	router.Handle("GET /auth/google/login", http.HandlerFunc(oauthGoogleLogin))
-	router.Handle("GET /auth/google/callback", http.HandlerFunc(oauthGoogleCallback))
+	router.Handle("GET /auth/google/callback", http.HandlerFunc(dbConn.oauthGoogleCallback))
 	router.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	router.Handle("GET /export", loginMiddleWare(http.HandlerFunc(server.exportHandler)))
-	router.Handle("GET /", loginMiddleWare(http.HandlerFunc(server.getHandler)))
-	router.Handle("POST /{id}/delete", loginMiddleWare(http.HandlerFunc(server.deleteHandler)))
-	router.Handle("POST /{id}/update", loginMiddleWare(http.HandlerFunc(server.postHandler)))
-	router.Handle("POST /", loginMiddleWare(http.HandlerFunc(server.postHandler)))
+	router.Handle("GET /export", dbConn.authMid(http.HandlerFunc(dbConn.exportHandler)))
+	router.Handle("GET /", dbConn.authMid(http.HandlerFunc(dbConn.getHandler)))
+	router.Handle("POST /{id}/delete", dbConn.authMid(http.HandlerFunc(dbConn.deleteHandler)))
+	router.Handle("POST /{id}/update", dbConn.authMid(http.HandlerFunc(dbConn.postHandler)))
+	router.Handle("POST /", dbConn.authMid(http.HandlerFunc(dbConn.postHandler)))
 
 	slog.Info("Starting server...")
-	http.ListenAndServe(":8080", loggingMiddleWare(router))
+	http.ListenAndServe(":8080", logMid(router))
 }

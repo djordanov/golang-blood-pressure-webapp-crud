@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bpo/sqlc/bpo"
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"log/slog"
@@ -12,14 +16,6 @@ import (
 	"os"
 	"time"
 )
-
-type Session struct {
-	id              string
-	authenticatedAt time.Time
-	email           string
-}
-
-var sessions = make(map[string]Session)
 
 var googleOauthConfig = &oauth2.Config{
 	RedirectURL:  "http://localhost:8080/auth/google/callback",
@@ -30,40 +26,37 @@ var googleOauthConfig = &oauth2.Config{
 }
 
 func oauthGoogleLogin(w http.ResponseWriter, r *http.Request) {
-	oauthState := generateStateOauthCookie(w)
-	url := googleOauthConfig.AuthCodeURL(oauthState)
-	slog.Info("Redirecting to ", "url", url)
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-}
-
-func generateStateOauthCookie(w http.ResponseWriter) string {
 	var expiration = time.Now().Add(10 * time.Minute)
+
 	b := make([]byte, 16)
 	rand.Read(b)
-	state := base64.URLEncoding.EncodeToString(b)
+	oauthState := base64.URLEncoding.EncodeToString(b)
 	cookie := http.Cookie{
 		Name:     "oauthstate",
-		Value:    state,
+		Value:    oauthState,
 		Expires:  expiration,
 		Secure:   false,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	}
-	http.SetCookie(w, &cookie)
 
-	return state
+	http.SetCookie(w, &cookie)
+	url := googleOauthConfig.AuthCodeURL(oauthState)
+	slog.Info("Redirecting to ", "url", url)
+
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-func oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
+func (s *DbConn) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	oauthState, err := r.Cookie("oauthstate")
 	if err != nil {
 		slog.Warn("oauthstate cookie missing")
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if r.FormValue("state") != oauthState.Value {
-		slog.Info("invalid oauth google state")
+		slog.Warn("invalid oauth google state")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
@@ -90,51 +83,79 @@ func oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionId := uuid.NewString()
-	session := Session{
-		id:              sessionId,
-		authenticatedAt: time.Now().UTC(),
-		email:           userInfo.Email,
+	person, err := s.queries.GetPersonByEmail(r.Context(), userInfo.Email)
+	if errors.Is(err, pgx.ErrNoRows) {
+		person, err = s.queries.CreatePerson(r.Context(), bpo.CreatePersonParams{
+			Email:     userInfo.Email,
+			CreatedAt: time.Now(),
+		})
 	}
-	sessions[sessionId] = session
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	expiresAt := time.Now().Add(24 * time.Hour)
+	sessionId := uuid.New()
+	createSessionParameters := bpo.CreateSessionParams{
+		ID:        sessionId,
+		ExpiresAt: expiresAt,
+		PersonID:  person.ID,
+	}
+
+	_, err = s.queries.CreateSession(r.Context(), createSessionParameters)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	cookie :=
 		http.Cookie{
 			Name:     "bpo-session",
-			Value:    sessionId,
+			Value:    sessionId.String(),
 			Path:     "/",
-			Expires:  time.Now().Add(24 * time.Hour),
+			Expires:  expiresAt,
 			Secure:   false,
 			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
 		}
 	http.SetCookie(w, &cookie)
+	ctx := context.WithValue(r.Context(), "PersonID", person.ID)
+
 	slog.Info("Successfully logged in", "email", userInfo.Email)
-	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	http.Redirect(w, r.WithContext(ctx), "/", http.StatusTemporaryRedirect)
 }
 
-func loginMiddleWare(next http.Handler) http.Handler {
+func (s *DbConn) authMid(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("bpo-session")
 		slog.Debug("Read session cookie", "cookie", cookie)
+		if err != nil || cookie.Value == "" {
+			http.Redirect(w, r, "/auth/google/login", http.StatusTemporaryRedirect)
+			return
+		}
+
+		sessionId, err := uuid.Parse(cookie.Value)
 		if err != nil {
-			http.Redirect(w, r, "/auth/google/login", http.StatusTemporaryRedirect)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		session, exists := sessions[cookie.Value]
+		session, err := s.queries.GetSessionById(r.Context(), sessionId)
 		slog.Debug("Read session", "session", session)
-		if !exists {
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		slog.Debug("Checking session authentication", "ExpiresAt", session.ExpiresAt)
+		if session.ExpiresAt.Before(time.Now()) {
 			http.Redirect(w, r, "/auth/google/login", http.StatusTemporaryRedirect)
 			return
 		}
 
-		slog.Debug("Checking session authentication", "authenticatedAt", session.authenticatedAt)
-		if session.authenticatedAt.Add(24 * time.Hour).Before(time.Now()) {
-			http.Redirect(w, r, "/auth/google/login", http.StatusTemporaryRedirect)
-			return
-		}
+		ctx := context.WithValue(r.Context(), "PersonID", session.PersonID)
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
