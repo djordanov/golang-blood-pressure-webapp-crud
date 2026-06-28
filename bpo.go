@@ -33,7 +33,12 @@ func (s *DbConn) getHandler(w http.ResponseWriter, r *http.Request) {
 	editableString := r.FormValue("editable")
 	editable, err := strconv.ParseBool(editableString)
 
-	personID := r.Context().Value("PersonID").(int)
+	personID, exists := r.Context().Value("PersonID").(int)
+	if !exists {
+		http.Error(w, "failed to find logged-in user", http.StatusInternalServerError)
+		return
+	}
+
 	bpos, err := s.queries.GetBloodPressureObservations(r.Context(), personID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -50,7 +55,11 @@ func (s *DbConn) getHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DbConn) exportHandler(w http.ResponseWriter, r *http.Request) {
-	personID := r.Context().Value("PersonID").(int)
+	personID, exists := r.Context().Value("PersonID").(int)
+	if !exists {
+		http.Error(w, "failed to find logged-in user", http.StatusInternalServerError)
+		return
+	}
 	bpos, err := s.queries.GetBloodPressureObservations(r.Context(), personID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -105,7 +114,11 @@ func (s *DbConn) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	personID := r.Context().Value("PersonID").(int)
+	personID, exists := r.Context().Value("PersonID").(int)
+	if !exists {
+		http.Error(w, "failed to find logged-in user", http.StatusInternalServerError)
+		return
+	}
 	err = s.queries.DeleteBloodPressureObservation(r.Context(), bpo.DeleteBloodPressureObservationParams{
 		ID:       id,
 		PersonID: personID,
@@ -266,11 +279,11 @@ func main() {
 	router.Handle("GET /auth/google/login", http.HandlerFunc(oauthGoogleLogin))
 	router.Handle("GET /auth/google/callback", http.HandlerFunc(dbConn.oauthGoogleCallback))
 	router.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	router.Handle("GET /export", dbConn.authMid(http.HandlerFunc(dbConn.exportHandler)))
-	router.Handle("GET /", dbConn.authMid(http.HandlerFunc(dbConn.getHandler)))
-	router.Handle("POST /{id}/delete", dbConn.authMid(http.HandlerFunc(dbConn.deleteHandler)))
-	router.Handle("POST /{id}/update", dbConn.authMid(http.HandlerFunc(dbConn.postHandler)))
-	router.Handle("POST /", dbConn.authMid(http.HandlerFunc(dbConn.postHandler)))
+	router.Handle("GET /export", dbConn.authMiddleware(http.HandlerFunc(dbConn.exportHandler)))
+	router.Handle("GET /", dbConn.authMiddleware(http.HandlerFunc(dbConn.getHandler)))
+	router.Handle("POST /{id}/delete", dbConn.authMiddleware(http.HandlerFunc(dbConn.deleteHandler)))
+	router.Handle("POST /{id}/update", dbConn.authMiddleware(http.HandlerFunc(dbConn.postHandler)))
+	router.Handle("POST /", dbConn.authMiddleware(http.HandlerFunc(dbConn.postHandler)))
 
 	slog.Info("Starting server...")
 	http.ListenAndServe(":8080", logMid(router))

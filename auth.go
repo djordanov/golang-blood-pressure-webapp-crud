@@ -83,6 +83,11 @@ func (s *DbConn) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// there's theoretically a race condition here
+	// if there are two concurrent requests
+	// but, that's not going to happen in this app
+	// and even if it does happen, all that goes wrong is one weird http error
+	// and on one refresh everything OK again
 	person, err := s.queries.GetPersonByEmail(r.Context(), userInfo.Email)
 	if errors.Is(err, pgx.ErrNoRows) {
 		person, err = s.queries.CreatePerson(r.Context(), bpo.CreatePersonParams{
@@ -126,7 +131,7 @@ func (s *DbConn) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r.WithContext(ctx), "/", http.StatusTemporaryRedirect)
 }
 
-func (s *DbConn) authMid(next http.Handler) http.Handler {
+func (s *DbConn) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("bpo-session")
 		slog.Debug("Read session cookie", "cookie", cookie)
@@ -137,15 +142,20 @@ func (s *DbConn) authMid(next http.Handler) http.Handler {
 
 		sessionId, err := uuid.Parse(cookie.Value)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Redirect(w, r, "/auth/google/login", http.StatusTemporaryRedirect)
 			return
 		}
 
 		session, err := s.queries.GetSessionById(r.Context(), sessionId)
 		slog.Debug("Read session", "session", session)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, pgx.ErrTooManyRows) {
+				http.Redirect(w, r, "/auth/google/login", http.StatusTemporaryRedirect)
+				return
+			} else {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 
 		slog.Debug("Checking session authentication", "ExpiresAt", session.ExpiresAt)
