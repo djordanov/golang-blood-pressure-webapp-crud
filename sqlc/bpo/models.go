@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type BloodPressureObservation struct {
@@ -30,5 +31,5 @@ type Person struct {
 type Session struct {
 	ID        uuid.UUID
 	PersonID  int
-	ExpiresAt time.Time
+	ExpiresAt pgtype.Timestamptz
 }

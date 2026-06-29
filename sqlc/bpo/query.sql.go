@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createBloodPressureObservation = `-- name: CreateBloodPressureObservation :one
@@ -83,7 +84,7 @@ RETURNING id, person_id, expires_at
 type CreateSessionParams struct {
 	ID        uuid.UUID
 	PersonID  int
-	ExpiresAt time.Time
+	ExpiresAt pgtype.Timestamptz
 }
 
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error) {
