@@ -286,5 +286,11 @@ func main() {
 	router.Handle("POST /", dbConn.authMiddleware(http.HandlerFunc(dbConn.postHandler)))
 
 	slog.Info("Starting server...")
-	http.ListenAndServe(":8080", logMiddleWare(router))
+
+	if getEnv("ENVIRONMENT", "development") == "development" {
+		http.ListenAndServe(":8080", logMiddleWare(router))
+	} else {
+		// TODO doesn't work yet
+		// http.ListenAndServeTLS(":8080", logMiddleWare(router))
+	}
 }

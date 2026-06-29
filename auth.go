@@ -35,9 +35,14 @@ func oauthGoogleLogin(w http.ResponseWriter, r *http.Request) {
 		Name:     "oauthstate",
 		Value:    oauthState,
 		Expires:  expiration,
-		Secure:   false,
+		Secure:   true,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
+	}
+
+	// workaround for no TLS on dev for now
+	if getEnv("ENVIRONMENT", "development") == "development" {
+		cookie.Secure = false
 	}
 
 	http.SetCookie(w, &cookie)
