@@ -47,7 +47,7 @@ func oauthGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-func (s *DbConn) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
+func (s *App) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	oauthState, err := r.Cookie("oauthstate")
 	if err != nil {
 		slog.Warn("oauthstate cookie missing")
@@ -122,7 +122,7 @@ func (s *DbConn) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 			Expires:  expiresAt,
 			Secure:   false,
 			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteStrictMode,
 		}
 	http.SetCookie(w, &cookie)
 	ctx := context.WithValue(r.Context(), "PersonID", person.ID)
@@ -131,7 +131,7 @@ func (s *DbConn) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r.WithContext(ctx), "/", http.StatusTemporaryRedirect)
 }
 
-func (s *DbConn) authMiddleware(next http.Handler) http.Handler {
+func (s *App) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("bpo-session")
 		slog.Debug("Read session cookie", "cookie", cookie)

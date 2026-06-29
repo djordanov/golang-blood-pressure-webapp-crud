@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-type DbConn struct {
+type App struct {
 	queries *bpo.Queries
 }
 
@@ -29,7 +29,7 @@ var templates = template.Must(template.ParseFiles(
 	"bpo-row-editable.html",
 ))
 
-func (s *DbConn) getHandler(w http.ResponseWriter, r *http.Request) {
+func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 	editableString := r.FormValue("editable")
 	editable, err := strconv.ParseBool(editableString)
 
@@ -54,7 +54,7 @@ func (s *DbConn) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *DbConn) exportHandler(w http.ResponseWriter, r *http.Request) {
+func (s *App) exportHandler(w http.ResponseWriter, r *http.Request) {
 	personID, exists := r.Context().Value("PersonID").(int)
 	if !exists {
 		http.Error(w, "failed to find logged-in user", http.StatusInternalServerError)
@@ -107,7 +107,7 @@ func (s *DbConn) exportHandler(w http.ResponseWriter, r *http.Request) {
 	writer.Flush()
 }
 
-func (s *DbConn) deleteHandler(w http.ResponseWriter, r *http.Request) {
+func (s *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -131,7 +131,7 @@ func (s *DbConn) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", 303)
 }
 
-func (s *DbConn) postHandler(w http.ResponseWriter, r *http.Request) {
+func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
 	personID := r.Context().Value("PersonID").(int)
 
 	slog.Debug("Parsing POST arguments...")
@@ -233,7 +233,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func logMid(next http.Handler) http.Handler {
+func logMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("Received request", "method", r.Method, "url", r.URL)
 		next.ServeHTTP(w, r)
@@ -272,7 +272,7 @@ func main() {
 	defer db.Close(ctx)
 	db.Ping(ctx)
 	queries := bpo.New(db)
-	dbConn := &DbConn{queries: queries}
+	dbConn := &App{queries: queries}
 
 	slog.Info("Attaching HTTP handlers...")
 	router := http.NewServeMux()
@@ -286,5 +286,5 @@ func main() {
 	router.Handle("POST /", dbConn.authMiddleware(http.HandlerFunc(dbConn.postHandler)))
 
 	slog.Info("Starting server...")
-	http.ListenAndServe(":8080", logMid(router))
+	http.ListenAndServe(":8080", logMiddleWare(router))
 }
