@@ -236,7 +236,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func logMiddleWare(next http.Handler) http.Handler {
+func logMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("Received request", "method", r.Method, "url", r.URL)
 		next.ServeHTTP(w, r)
@@ -291,7 +291,7 @@ func main() {
 	slog.Info("Starting server...")
 
 	if getEnv("ENVIRONMENT", "development") == "development" {
-		http.ListenAndServe(":8080", logMiddleWare(router))
+		http.ListenAndServe(":8080", logMiddleware(router))
 	} else {
 		// TODO doesn't work yet
 		// http.ListenAndServeTLS(":8080", logMiddleWare(router))
