@@ -26,7 +26,7 @@ var googleOauthConfig = &oauth2.Config{
 }
 
 func oauthGoogleLogin(w http.ResponseWriter, r *http.Request) {
-	var expiration = time.Now().Add(10 * time.Minute)
+	expiration := time.Now().Add(10 * time.Minute)
 
 	b := make([]byte, 16)
 	rand.Read(b)
@@ -125,10 +125,14 @@ func (s *App) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 			Value:    sessionId.String(),
 			Path:     "/",
 			Expires:  expiresAt,
-			Secure:   false,
+			Secure:   true,
 			HttpOnly: true,
 			SameSite: http.SameSiteStrictMode,
 		}
+	// workaround for no TLS on dev for now
+	if getEnv("ENVIRONMENT", "development") == "development" {
+		cookie.Secure = false
+	}
 	http.SetCookie(w, &cookie)
 	ctx := context.WithValue(r.Context(), "PersonID", person.ID)
 
