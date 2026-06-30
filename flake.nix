@@ -19,7 +19,10 @@
         container = pkgs.dockerTools.buildImage {
           name = "bpo-container";
           tag = "latest";
-          contents = [ self.packages.${system}.bpo];
+          copyToRoot = pkgs.buildEnv {
+            name = "image-root";
+            paths = [ self.packages.${system}.bpo ];
+          };
           config = {
             Cmd = [ "${self.packages.${system}.bpo}/bin/bpo"];
             ExposedPorts = { "8080/tcp" = {}; };
