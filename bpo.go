@@ -3,6 +3,7 @@ package main
 import (
 	"bpo/sqlc/bpo" // generated code via sqlc
 	"context"
+	"embed"
 	"encoding/csv"
 	"fmt"
 	"github.com/jackc/pgx/v5"
@@ -23,11 +24,9 @@ type TemplateContext struct {
 	Editable bool
 }
 
-var templates = template.Must(template.ParseFiles(
-	"bpos.html",
-	"bpo-row.html",
-	"bpo-row-editable.html",
-))
+//go:embed templates/*.html
+var templateFS embed.FS
+var templates = template.Must(template.ParseFS(templateFS, "templates/*.html"))
 
 func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 	editableString := r.FormValue("editable")
