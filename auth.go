@@ -134,10 +134,9 @@ func (s *App) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		cookie.Secure = false
 	}
 	http.SetCookie(w, &cookie)
-	ctx := context.WithValue(r.Context(), "PersonID", person.ID)
 
 	slog.Info("Successfully logged in", "email", userInfo.Email)
-	http.Redirect(w, r.WithContext(ctx), "/", http.StatusTemporaryRedirect)
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
 func (s *App) authMiddleware(next http.Handler) http.Handler {

@@ -7,7 +7,7 @@ CREATE TABLE person (
 CREATE TABLE session (
     id UUID PRIMARY KEY,
     person_id INTEGER NOT NULL REFERENCES person(id),
-    expires_at TIMESTAMP NOT NULL
+    expires_at TIMESTAMPTZ NOT NULL
 );
 
 CREATE TABLE blood_pressure_observation (

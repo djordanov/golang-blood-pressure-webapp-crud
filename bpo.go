@@ -30,14 +30,17 @@ var templates = template.Must(template.ParseFS(templateFS, "templates/*.html"))
 
 //go:embed static/*
 var staticFS embed.FS
-var static = template.Must(template.ParseFS(staticFS, "static/*"))
 
 func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 	editableString := r.FormValue("editable")
-	editable, err := strconv.ParseBool(editableString)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	editable := false
+	if editableString != "" {
+		var err error
+		editable, err = strconv.ParseBool(editableString)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	personID, exists := r.Context().Value("PersonID").(int)
@@ -289,7 +292,7 @@ func main() {
 	router := http.NewServeMux()
 	router.Handle("GET /auth/google/login", http.HandlerFunc(oauthGoogleLogin))
 	router.Handle("GET /auth/google/callback", http.HandlerFunc(dbConn.oauthGoogleCallback))
-	router.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(staticFS)))
+	router.Handle("GET /static/", http.FileServerFS(staticFS))
 	router.Handle("GET /export", dbConn.authMiddleware(http.HandlerFunc(dbConn.exportHandler)))
 	router.Handle("GET /", dbConn.authMiddleware(http.HandlerFunc(dbConn.getHandler)))
 	router.Handle("POST /{id}/delete", dbConn.authMiddleware(http.HandlerFunc(dbConn.deleteHandler)))
