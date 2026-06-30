@@ -35,6 +35,10 @@ var static = template.Must(template.ParseFS(staticFS, "static/*"))
 func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 	editableString := r.FormValue("editable")
 	editable, err := strconv.ParseBool(editableString)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	personID, exists := r.Context().Value("PersonID").(int)
 	if !exists {
@@ -135,7 +139,11 @@ func (s *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
-	personID := r.Context().Value("PersonID").(int)
+	personID, exists := r.Context().Value("PersonID").(int)
+	if !exists {
+		http.Error(w, "failed to find logged-in user", http.StatusInternalServerError)
+		return
+	}
 
 	slog.Debug("Parsing POST arguments...")
 	datetimestr := r.PostFormValue("date") + "T" + r.PostFormValue("time")
