@@ -6,7 +6,7 @@ import (
 	"embed"
 	"encoding/csv"
 	"fmt"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -271,20 +271,42 @@ func main() {
 	slog.Info("Starting program...")
 
 	slog.Info("Connecting to database...")
+	sslmode := "verify-full"
+	if getEnv("ENVIRONMENT", "development") == "development" {
+		sslmode = "disable"
+	}
 	connStr := fmt.Sprintf(
-		"host=%s port=5432 user=%s password=%s dbname=%s sslmode=disable",
+		"host=%s port=5432 user=%s password=%s dbname=%s sslmode=%s",
 		getEnv("POSTGRES_HOST", "localhost"),
 		getEnv("POSTGRES_USER", "gbpw"),
 		getEnv("POSTGRES_PASSWORD", "gbpwassword"),
 		getEnv("POSTGRES_DB", "gbpw"),
+		sslmode,
 	)
-	db, err := pgx.Connect(ctx, connStr)
+	slog.Info("Connecting to database", "sslmode", sslmode)
+
+	poolConfig, err := pgxpool.ParseConfig(connStr)
+	if err != nil {
+		slog.Error("failed to parse db config", "err", err)
+		panic(err)
+	}
+	poolConfig.MaxConns = 8
+	poolConfig.MaxConnLifetime = time.Hour
+	poolConfig.MaxConnIdleTime = 30 * time.Minute
+	poolConfig.ConnConfig.ConnectTimeout = 10 * time.Second
+	poolConfig.ConnConfig.RuntimeParams["statement_timeout"] = "5000"
+
+	db, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {
 		slog.Error(err.Error())
 		panic(err)
 	}
-	defer db.Close(ctx)
-	db.Ping(ctx)
+	defer db.Close()
+
+	if err := db.Ping(ctx); err != nil {
+		slog.Error("database ping failed", "err", err)
+		panic(err)
+	}
 	queries := bpo.New(db)
 	dbConn := &App{queries: queries}
 
