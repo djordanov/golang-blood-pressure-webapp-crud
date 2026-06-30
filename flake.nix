@@ -14,7 +14,7 @@
           pname = "bpo";
           version = "0.2.0";
           src = ./.;
-          vendorHash = "sha256-zNiOubWRZOTJFyhcmM+lKdI954hfEgrpikM8pIyabTk=";
+          vendorHash = "sha256-ErEbmylc9TSkiV3NHcEs1AS21m9ePQu7tRvDDC5Neoo=";
         };
         container = pkgs.dockerTools.buildImage {
           name = "bpo-container";
