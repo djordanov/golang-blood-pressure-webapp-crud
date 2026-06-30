@@ -5,11 +5,11 @@ import (
 	"context"
 	"embed"
 	"encoding/csv"
-	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"html/template"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -275,14 +275,14 @@ func main() {
 	if getEnv("ENVIRONMENT", "development") == "development" {
 		sslmode = "disable"
 	}
-	connStr := fmt.Sprintf(
-		"host=%s port=5432 user=%s password=%s dbname=%s sslmode=%s",
-		getEnv("POSTGRES_HOST", "localhost"),
-		getEnv("POSTGRES_USER", "gbpw"),
-		getEnv("POSTGRES_PASSWORD", "gbpwassword"),
-		getEnv("POSTGRES_DB", "gbpw"),
-		sslmode,
-	)
+	dbURL := &url.URL{
+		Scheme:   "postgres",
+		Host:     getEnv("POSTGRES_HOST", "localhost") + ":5432",
+		User:     url.UserPassword(getEnv("POSTGRES_USER", "gbpw"), getEnv("POSTGRES_PASSWORD", "gbpwassword")),
+		Path:     getEnv("POSTGRES_DB", "gbpw"),
+		RawQuery: "sslmode=" + sslmode,
+	}
+	connStr := dbURL.String()
 	slog.Info("Connecting to database", "sslmode", sslmode)
 
 	poolConfig, err := pgxpool.ParseConfig(connStr)
