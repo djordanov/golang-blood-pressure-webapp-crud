@@ -323,10 +323,9 @@ func main() {
 
 	slog.Info("Starting server...")
 
-	if getEnv("ENVIRONMENT", "development") == "development" {
-		http.ListenAndServe(":8080", logMiddleware(router))
-	} else {
-		// TODO doesn't work yet
-		// http.ListenAndServeTLS(":8080", logMiddleWare(router))
+	port := getEnv("PORT", "8080")
+	if err := http.ListenAndServe(":"+port, logMiddleware(router)); err != nil {
+		slog.Error("server error", "err", err)
+		panic(err)
 	}
 }
