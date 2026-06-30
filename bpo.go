@@ -324,7 +324,8 @@ func main() {
 	slog.Info("Starting server...")
 
 	port := getEnv("PORT", "8080")
-	if err := http.ListenAndServe(":"+port, logMiddleware(router)); err != nil {
+	handler := logMiddleware(http.NewCrossOriginProtection().Handler(router))
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		slog.Error("server error", "err", err)
 		panic(err)
 	}
