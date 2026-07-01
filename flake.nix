@@ -16,12 +16,15 @@
           src = ./.;
           vendorHash = "sha256-ErEbmylc9TSkiV3NHcEs1AS21m9ePQu7tRvDDC5Neoo=";
         };
-        container = pkgs.dockerTools.buildImage {
+        bpo-container = pkgs.dockerTools.buildImage {
           name = "bpo-container";
           tag = "latest";
           copyToRoot = pkgs.buildEnv {
             name = "image-root";
-            paths = [ self.packages.${system}.bpo ];
+            paths = [
+              self.packages.${system}.bpo
+              pkgs.cacert
+            ];
           };
           config = {
             Cmd = [ "${self.packages.${system}.bpo}/bin/bpo"];
