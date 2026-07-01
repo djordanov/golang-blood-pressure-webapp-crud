@@ -142,7 +142,7 @@ func (s *App) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 
-	slog.Info("Successfully logged in", "email", userInfo.Email)
+	slog.Info("Successfully logged in", "sessionId", sessionId)
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
