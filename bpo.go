@@ -277,9 +277,9 @@ func main() {
 	}
 	dbURL := &url.URL{
 		Scheme:   "postgres",
-		Host:     getEnv("POSTGRES_HOST", "localhost") + ":5432",
-		User:     url.UserPassword(getEnv("POSTGRES_USER", "gbpw"), getEnv("POSTGRES_PASSWORD", "gbpwassword")),
-		Path:     getEnv("POSTGRES_DB", "gbpw"),
+		Host:     os.Getenv("POSTGRES_HOST") + ":5432",
+		User:     url.UserPassword(os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_PASSWORD")),
+		Path:     os.Getenv("POSTGRES_DB"),
 		RawQuery: "sslmode=" + sslmode,
 	}
 	connStr := dbURL.String()
@@ -323,7 +323,7 @@ func main() {
 
 	slog.Info("Starting server...")
 
-	port := getEnv("PORT", "8080")
+	port := os.Getenv("PORT")
 	handler := logMiddleware(http.NewCrossOriginProtection().Handler(router))
 	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		slog.Error("server error", "err", err)
