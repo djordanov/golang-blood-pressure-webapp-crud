@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"html/template"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -275,9 +276,11 @@ func main() {
 	if getEnv("ENVIRONMENT", "development") == "development" {
 		sslmode = "disable"
 	}
+	postgresHost := os.Getenv("POSTGRES_HOST")
+	postgresPort := getEnv("POSTGRES_PORT", "5432")
 	dbURL := &url.URL{
 		Scheme:   "postgres",
-		Host:     os.Getenv("POSTGRES_HOST") + ":5432",
+		Host:     net.JoinHostPort(postgresHost, postgresPort),
 		User:     url.UserPassword(os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_PASSWORD")),
 		Path:     os.Getenv("POSTGRES_DB"),
 		RawQuery: "sslmode=" + sslmode,
