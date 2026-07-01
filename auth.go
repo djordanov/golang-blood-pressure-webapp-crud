@@ -134,7 +134,7 @@ func (s *App) oauthGoogleCallback(w http.ResponseWriter, r *http.Request) {
 			Expires:  expiresAt,
 			Secure:   true,
 			HttpOnly: true,
-			SameSite: http.SameSiteStrictMode,
+			SameSite: http.SameSiteLaxMode,
 		}
 	// workaround for no TLS on dev for now
 	if getEnv("ENVIRONMENT", "development") == "development" {
