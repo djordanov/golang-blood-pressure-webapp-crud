@@ -120,6 +120,7 @@ SELECT
     comment
 FROM blood_pressure_observation
 WHERE person_id = $1
+ORDER BY observed_at DESC
 `
 
 type GetBloodPressureObservationsRow struct {
