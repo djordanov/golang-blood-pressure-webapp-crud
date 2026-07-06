@@ -139,7 +139,7 @@ func (s *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/", 303)
+	http.Redirect(w, r, "/?editable=true", 303)
 }
 
 func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
@@ -238,7 +238,7 @@ func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
 		slog.Debug("Updated observation", "observation", observation)
 	}
 
-	http.Redirect(w, r, "/", 303)
+	http.Redirect(w, r, "/?editable=true", 303)
 }
 
 func getEnv(key, fallback string) string {
