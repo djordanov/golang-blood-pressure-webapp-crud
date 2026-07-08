@@ -204,6 +204,8 @@ func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
 		comment,
 	)
 
+	var o bpo.GetBloodPressureObservationsRow
+	//
 	if id == 0 {
 		observation := bpo.CreateBloodPressureObservationParams{
 			ObservedAt: observedAt,
@@ -216,12 +218,20 @@ func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		slog.Debug("Creating new observation", "observation", observation)
-		_, err = s.queries.CreateBloodPressureObservation(r.Context(), observation)
+		getReturned, err := s.queries.CreateBloodPressureObservation(r.Context(), observation)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		slog.Debug("Created new observation", "observation", observation)
+		o.ID = getReturned.ID
+		o.ObservedAt = getReturned.ObservedAt
+		o.Irregular = getReturned.Irregular
+		o.Systolic = getReturned.Systolic
+		o.Diastolic = getReturned.Diastolic
+		o.Pulse = getReturned.Pulse
+		o.Comment = getReturned.Comment
 	} else {
 		observation := bpo.UpdateBloodPressureObservationParams{
 			ObservedAt: observedAt,
@@ -235,12 +245,27 @@ func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		slog.Debug("Updating observation", "observation", observation)
-		_, err = s.queries.UpdateBloodPressureObservation(r.Context(), observation)
+		updatedReturned, err := s.queries.UpdateBloodPressureObservation(r.Context(), observation)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		slog.Debug("Updated observation", "observation", observation)
+		o.ID = updatedReturned.ID
+		o.ObservedAt = updatedReturned.ObservedAt
+		o.Irregular = updatedReturned.Irregular
+		o.Systolic = updatedReturned.Systolic
+		o.Diastolic = updatedReturned.Diastolic
+		o.Pulse = updatedReturned.Pulse
+		o.Comment = updatedReturned.Comment
+	}
+
+	if hxHeader := r.Header.Get("HX-Request"); hxHeader == "true" {
+		err = templates.ExecuteTemplate(w, "bpo-row-editable", o)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	http.Redirect(w, r, "/?editable=true", 303)

@@ -10,7 +10,17 @@
   <td><input form="bpo-{{.ID}}" name="pulse" type="number" value="{{.Pulse}}" /></td>
   <td><input form="bpo-{{.ID}}" name="comment" type="text" value="{{.Comment}}" /></td>
   <td class="action-col">
-    <button aria-label="Save" class="secondary" form="bpo-{{.ID}}" type="submit"><i class="ti ti-check"></i></button>
+    <button
+       aria-label="Save"
+       class="secondary"
+       form="bpo-{{.ID}}"
+       type="submit"
+       hx-post="/{{.ID}}/update"
+       hx-target="closest tr"
+       hx-swap="outerHTML">
+
+      <i class="ti ti-check"></i>
+    </button>
     <button
        aria-label="Delete"
        class="secondary"
@@ -21,6 +31,7 @@
        hx-delete="/{{.ID}}"
        hx-target="closest tr"
        hx-swap="outerHTML">
+
       <i class="ti ti-trash"></i>
     </button>
   </td>
