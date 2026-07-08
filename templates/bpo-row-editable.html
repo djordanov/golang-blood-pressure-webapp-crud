@@ -11,8 +11,8 @@
   <td><input form="bpo-{{.ID}}" name="comment" type="text" value="{{.Comment}}" /></td>
   <td class="action-col">
     <button aria-label="Save" class="secondary" form="bpo-{{.ID}}" type="submit"><i class="ti ti-check"></i></button>
-    <button aria-label="Delete" class="secondary" form="bpo-{{.ID}}" type="submit" formaction="/{{.ID}}/delete"
-      aria-label="delete"><i class="ti ti-trash"></i></button>
+    <div aria-label="Delete" class="btn secondary" form="bpo-{{.ID}}" type="submit" hx-post="/{{.ID}}/delete" hx-target="closest tr" hx-swap="outerHTML swap:1s"
+      aria-label="delete"><i class="ti ti-trash"></i></div >
   </td>
 </tr>
 {{end}}

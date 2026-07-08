@@ -139,7 +139,7 @@ func (s *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/?editable=true", 303)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
