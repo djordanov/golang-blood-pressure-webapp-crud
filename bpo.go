@@ -139,7 +139,12 @@ func (s *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	if hxHeader := r.Header.Get("HX-Request"); hxHeader == "true" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	http.Redirect(w, r, "/?editable=true", 303)
 }
 
 func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
@@ -321,6 +326,7 @@ func main() {
 	router.Handle("GET /export", dbConn.authMiddleware(http.HandlerFunc(dbConn.exportHandler)))
 	router.Handle("GET /", dbConn.authMiddleware(http.HandlerFunc(dbConn.getHandler)))
 	router.Handle("POST /{id}/delete", dbConn.authMiddleware(http.HandlerFunc(dbConn.deleteHandler)))
+	router.Handle("DELETE /{id}/", dbConn.authMiddleware(http.HandlerFunc(dbConn.deleteHandler)))
 	router.Handle("POST /{id}/update", dbConn.authMiddleware(http.HandlerFunc(dbConn.postHandler)))
 	router.Handle("POST /", dbConn.authMiddleware(http.HandlerFunc(dbConn.postHandler)))
 
