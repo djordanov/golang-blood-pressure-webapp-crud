@@ -17,12 +17,23 @@
 
 <body>
   <main class="container">
-    <h1>Blood Pressure</h1>
+
+    <span>
+      <h1>Blood Pressure</h1>
+  
+      <div class="float-right">
+        {{if .Editable}}
+        <a class="secondary" aria-label="action" href="/" role="button">CANCEL</a>
+        {{else}}
+        <a class="secondary" aria-label="action" href="/?editable=true" role="button">EDIT</a>
+        {{end}}
+        <a class="secondary" role="button" href="/export">EXPORT</a>
+      </div>
+    </span>
 
     {{range .Bpos}}
     <form id="bpo-{{.ID}}" action="/{{.ID}}/update" method="post"></form>
     {{end}}
-
     <colgroup>
       <col class="id-col">
       <col class="date-col">
@@ -46,11 +57,6 @@
           <th>Pulse</th>
           <th>Comment</th>
           <th>
-            {{if .Editable}}
-            <a aria-label="action" href="/" role="button">CANCEL</a>
-            {{else}}
-            <a aria-label="action" href="/?editable=true" role="button">EDIT</a>
-            {{end}}
           </th>
         </tr>
       </thead>
@@ -65,7 +71,7 @@
       </tbody>
     </table>
 
-    <button command="show-modal" commandfor="add-new-bpo-dialog" onclick="setDefaultDateTime()">ADD NEW</button>
+    <button class="w-100" command="show-modal" commandfor="add-new-bpo-dialog" onclick="setDefaultDateTime()">ADD NEW</button>
     <dialog id="add-new-bpo-dialog" closedby="any">
       <article>
         <form id="bpo-new" action="/" method="dialog">
@@ -109,7 +115,6 @@
         </form>
       </article>
     </dialog>
-    <a class="secondary" role="button" href="/export">EXPORT ALL</a>
   </main>
 </body>
 
