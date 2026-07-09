@@ -68,7 +68,7 @@
     <button command="show-modal" commandfor="add-new-bpo-dialog" onclick="setDefaultDateTime()">ADD NEW</button>
     <dialog id="add-new-bpo-dialog" closedby="any">
       <article>
-        <form id="bpo-new" action="/" method="post">
+        <form id="bpo-new" action="/" method="dialog">
           <fieldset class="grid">
             <div>
               <label for="date">Date</label>
@@ -100,7 +100,12 @@
           </fieldset>
           <label for="comment">Comment</label>
           <textarea name="comment" type="text"></textarea>
-          <button type="submit">CREATE</button>
+          <button
+             type="submit"
+             hx-post="/"
+             hx-target="tbody"
+             hx-swap="afterbegin"
+             hx-on:htmx:after-request="if(event.detail.successful) resetNewBpoModal(this)">CREATE</button>
         </form>
       </article>
     </dialog>

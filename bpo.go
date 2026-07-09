@@ -261,7 +261,7 @@ func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if hxHeader := r.Header.Get("HX-Request"); hxHeader == "true" {
-		err = templates.ExecuteTemplate(w, "bpo-row-editable", o)
+		err = templates.ExecuteTemplate(w, "bpo-row", o)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -341,19 +341,20 @@ func main() {
 		panic(err)
 	}
 	queries := bpo.New(db)
-	dbConn := &App{queries: queries}
+	app := &App{queries: queries}
 
 	slog.Info("Attaching HTTP handlers...")
 	router := http.NewServeMux()
 	router.Handle("GET /auth/google/login", http.HandlerFunc(oauthGoogleLogin))
-	router.Handle("GET /auth/google/callback", http.HandlerFunc(dbConn.oauthGoogleCallback))
+	router.Handle("GET /auth/google/callback", http.HandlerFunc(app.oauthGoogleCallback))
 	router.Handle("GET /static/", http.FileServerFS(staticFS))
-	router.Handle("GET /export", dbConn.authMiddleware(http.HandlerFunc(dbConn.exportHandler)))
-	router.Handle("GET /", dbConn.authMiddleware(http.HandlerFunc(dbConn.getHandler)))
-	router.Handle("POST /{id}/delete", dbConn.authMiddleware(http.HandlerFunc(dbConn.deleteHandler)))
-	router.Handle("DELETE /{id}/", dbConn.authMiddleware(http.HandlerFunc(dbConn.deleteHandler)))
-	router.Handle("POST /{id}/update", dbConn.authMiddleware(http.HandlerFunc(dbConn.postHandler)))
-	router.Handle("POST /", dbConn.authMiddleware(http.HandlerFunc(dbConn.postHandler)))
+	router.Handle("GET /export", app.authMiddleware(http.HandlerFunc(app.exportHandler)))
+	router.Handle("GET /", app.authMiddleware(http.HandlerFunc(app.getHandler)))
+	router.Handle("POST /{id}/delete", app.authMiddleware(http.HandlerFunc(app.deleteHandler)))
+	router.Handle("DELETE /{id}/", app.authMiddleware(http.HandlerFunc(app.deleteHandler)))
+	router.Handle("POST /{id}/update", app.authMiddleware(http.HandlerFunc(app.postHandler)))
+	router.Handle("PUT /{id}/", app.authMiddleware(http.HandlerFunc(app.postHandler)))
+	router.Handle("POST /", app.authMiddleware(http.HandlerFunc(app.postHandler)))
 
 	slog.Info("Starting server...")
 
