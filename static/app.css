@@ -32,14 +32,14 @@ input[type="checkbox"] {
   gap: 0.5rem;
 }
 
-/* backported from Tailwind*/ 
+/* backported from Tailwind*/
 /* https://tailwindcss.com/ */
 /* it's not really worth including whole tailwind just for a few classes */
 /* but use it's classnames */
 .w-100 {
   width: 100%
 }
+
 .float-right {
   float: right
 }
-

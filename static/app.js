@@ -1,7 +1,7 @@
 function setDefaultDateTime() {
   let now = new Date();
   document.querySelector('#bpo-new-date').value
-    = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, "0")}-${now.getDate().toString().padStart(2, "0")}`;
+    = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, "0")}-${now.getDate().toString().padStart(2, "0")}`;
   document.querySelector('#bpo-new-time').value
     = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
 }

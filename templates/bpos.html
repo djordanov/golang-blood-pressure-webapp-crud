@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="en-EN">
+<html lang="en">
 
 <head>
   <meta charset="utf-8" />
   <link rel="icon" href="data:,">
   <title>Blood Pressure</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" 
-          integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V"
-          crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"
+    integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V"
+    crossorigin="anonymous"></script>
   <link rel="stylesheet" href="static/app.css">
   <script src="static/app.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont/tabler-icons.min.css" />
@@ -18,9 +18,9 @@
 <body>
   <main class="container">
 
-    <span>
+    <div>
       <h1>Blood Pressure</h1>
-  
+
       <div class="float-right">
         {{if .Editable}}
         <a class="secondary" aria-label="action" href="/" role="button">CANCEL</a>
@@ -29,7 +29,7 @@
         {{end}}
         <a class="secondary" role="button" href="/export">EXPORT</a>
       </div>
-    </span>
+    </div>
 
     {{range .Bpos}}
     <form id="bpo-{{.ID}}" action="/{{.ID}}/update" method="post"></form>
@@ -71,7 +71,8 @@
       </tbody>
     </table>
 
-    <button class="w-100" command="show-modal" commandfor="add-new-bpo-dialog" onclick="setDefaultDateTime()">ADD NEW</button>
+    <button class="w-100" command="show-modal" commandfor="add-new-bpo-dialog" onclick="setDefaultDateTime()">ADD
+      NEW</button>
     <dialog id="add-new-bpo-dialog" closedby="any">
       <article>
         <form id="bpo-new" action="/" method="dialog">
@@ -106,12 +107,8 @@
           </fieldset>
           <label for="comment">Comment</label>
           <textarea name="comment" type="text"></textarea>
-          <button
-             type="submit"
-             hx-post="/"
-             hx-target="tbody"
-             hx-swap="afterbegin"
-             hx-on:htmx:after-request="if(event.detail.successful) resetNewBpoModal(this)">CREATE</button>
+          <button type="submit" hx-post="/" hx-target="tbody" hx-swap="afterbegin"
+            hx-on:htmx:after-request="if(event.detail.successful) resetNewBpoModal(this)">CREATE</button>
         </form>
       </article>
     </dialog>
