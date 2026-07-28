@@ -27,6 +27,7 @@
         {{else}}
         <a class="secondary" aria-label="action" href="/?editable=true" role="button">EDIT</a>
         {{end}}
+        <button class="secondary" command="show-modal" commandfor="import-dialog">IMPORT</button>
         <a class="secondary" role="button" href="/export">EXPORT</a>
       </div>
     </div>
@@ -108,10 +109,24 @@
           <label for="comment">Comment</label>
           <textarea name="comment" type="text"></textarea>
           <button type="submit" hx-post="/" hx-target="tbody" hx-swap="afterbegin"
-            hx-on:htmx:after-request="if(event.detail.successful) resetNewBpoModal(this)">CREATE</button>
+            hx-on:htmx:after-request="if(event.detail.successful) resetFormModal(this)">CREATE</button>
         </form>
       </article>
     </dialog>
+
+    <dialog id="import-dialog" closedby="any">
+      <article>
+        <form method="post" action="/import">
+          <label for="import-csv">
+            <b>Observations to Import</b>
+            <p>Without header row</p>
+          </label>
+          <textarea type="file" name="import-csv" rows="10" cols="30" placeholder="2026-07-09T22:41;false;9;8;7;Test1;
+2026-07-09T11:18;false;1;2;1;Test2;"></textarea>
+          <button type="submit">CREATE</button>
+      </article>
+    </dialog>
+
   </main>
 </body>
 

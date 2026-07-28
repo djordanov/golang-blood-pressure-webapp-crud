@@ -14,7 +14,7 @@ document.addEventListener('click', (event) => {
   }
 });
 
-function resetNewBpoModal(triggerElement) {
+function resetFormModal(triggerElement) {
   triggerElement.closest('form').reset();
   triggerElement.closest('dialog').close();
 }

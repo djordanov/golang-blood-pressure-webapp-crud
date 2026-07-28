@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -65,6 +66,71 @@ func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *App) importHandler(w http.ResponseWriter, r *http.Request) {
+	personID := r.Context().Value("PersonID").(int)
+
+	slog.Debug("Parsing import-csv POST argument...")
+	importCsv := r.PostFormValue("import-csv")
+
+	slog.Debug("Parsing csv...")
+	reader := csv.NewReader(strings.NewReader(importCsv))
+	reader.Comma = ';'
+
+	records, err := reader.ReadAll()
+	if err != nil {
+		http.Error(w, "failed to parse csv", http.StatusBadRequest)
+		return
+	}
+
+	for _, record := range records {
+		slog.Debug("Parsing record", "record", record)
+		observedAt, err := time.Parse("2006-01-02T15:04", record[0]) // local time from the users perspective, do not track timezone or convert
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		irregular, err := strconv.ParseBool(record[1])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		systolic, err := strconv.Atoi(record[2])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		diastolic, err := strconv.Atoi(record[3])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		pulse, err := strconv.Atoi(record[4])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		observation := bpo.CreateBloodPressureObservationParams{
+			ObservedAt: observedAt,
+			Systolic:   systolic,
+			Diastolic:  diastolic,
+			Pulse:      pulse,
+			Irregular:  irregular,
+			Comment:    record[5],
+			PersonID:   personID,
+		}
+
+		slog.Debug("Creating new observation", "observation", observation)
+		_, err = s.queries.CreateBloodPressureObservation(r.Context(), observation)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	http.Redirect(w, r, "/", 303)
+}
+
 func (s *App) exportHandler(w http.ResponseWriter, r *http.Request) {
 	personID, exists := r.Context().Value("PersonID").(int)
 	if !exists {
@@ -96,7 +162,7 @@ func (s *App) exportHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, bpo := range bpos {
 		err = writer.Write([]string{
-			bpo.ObservedAt.Format("2006-01-02 15:04"),
+			bpo.ObservedAt.Format("2006-01-02T15:04"),
 			strconv.FormatBool(bpo.Irregular),
 			strconv.Itoa(int(bpo.Systolic)),
 			strconv.Itoa(int(bpo.Diastolic)),
@@ -148,11 +214,7 @@ func (s *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
-	personID, exists := r.Context().Value("PersonID").(int)
-	if !exists {
-		http.Error(w, "failed to find logged-in user", http.StatusInternalServerError)
-		return
-	}
+	personID := r.Context().Value("PersonID").(int)
 
 	slog.Debug("Parsing POST arguments...")
 	datetimestr := r.PostFormValue("date") + "T" + r.PostFormValue("time")
@@ -349,6 +411,7 @@ func main() {
 	router.Handle("GET /auth/google/callback", http.HandlerFunc(app.oauthGoogleCallback))
 	router.Handle("GET /static/", http.FileServerFS(staticFS))
 	router.Handle("GET /export", app.authMiddleware(http.HandlerFunc(app.exportHandler)))
+	router.Handle("POST /import", app.authMiddleware(http.HandlerFunc(app.importHandler)))
 	router.Handle("GET /", app.authMiddleware(http.HandlerFunc(app.getHandler)))
 	router.Handle("POST /{id}/delete", app.authMiddleware(http.HandlerFunc(app.deleteHandler)))
 	router.Handle("DELETE /{id}/", app.authMiddleware(http.HandlerFunc(app.deleteHandler)))
