@@ -119,11 +119,12 @@
         <form method="post" action="/import">
           <label for="import-csv">
             <b>Observations to Import</b>
-            <p>Without header row</p>
           </label>
-          <textarea type="file" name="import-csv" rows="10" cols="30" placeholder="2026-07-09T22:41;false;9;8;7;Test1;
+          <textarea name="import-csv" rows="10" cols="30" placeholder="ObservedAt;Irregular Heartbeat;Systolic;Diastolic;Pulse;Comment
+2026-07-09T22:41;false;9;8;7;Test1;
 2026-07-09T11:18;false;1;2;1;Test2;"></textarea>
           <button type="submit">CREATE</button>
+        </form>
       </article>
     </dialog>
 

@@ -34,6 +34,8 @@ var templates = template.Must(template.ParseFS(templateFS, "templates/*.html"))
 var staticFS embed.FS
 
 func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
+	personID := r.Context().Value("PersonID").(int)
+
 	editableString := r.FormValue("editable")
 	editable := false
 	if editableString != "" {
@@ -43,12 +45,6 @@ func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	}
-
-	personID, exists := r.Context().Value("PersonID").(int)
-	if !exists {
-		http.Error(w, "failed to find logged-in user", http.StatusInternalServerError)
-		return
 	}
 
 	bpos, err := s.queries.GetBloodPressureObservations(r.Context(), personID)
@@ -71,6 +67,10 @@ func (s *App) importHandler(w http.ResponseWriter, r *http.Request) {
 
 	slog.Debug("Parsing import-csv POST argument...")
 	importCsv := r.PostFormValue("import-csv")
+	if importCsv == "" {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
 
 	slog.Debug("Parsing csv...")
 	reader := csv.NewReader(strings.NewReader(importCsv))
@@ -82,7 +82,14 @@ func (s *App) importHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, record := range records {
+	headerRow := strings.Join(records[0], ";")
+	if headerRow != "ObservedAt;Irregular Heartbeat;Systolic;Diastolic;Pulse;Comment" {
+		http.Error(w, "expected csv header format: 'ObservedAt;Irregular Heartbeat;Systolic;Diastolic;Pulse;Comment'", http.StatusBadRequest)
+		return
+	}
+
+	// TODO add transaction and/ or duplicate protection
+	for _, record := range records[1:] {
 		slog.Debug("Parsing record", "record", record)
 		observedAt, err := time.Parse("2006-01-02T15:04", record[0]) // local time from the users perspective, do not track timezone or convert
 		if err != nil {
@@ -128,15 +135,12 @@ func (s *App) importHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	http.Redirect(w, r, "/", 303)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (s *App) exportHandler(w http.ResponseWriter, r *http.Request) {
-	personID, exists := r.Context().Value("PersonID").(int)
-	if !exists {
-		http.Error(w, "failed to find logged-in user", http.StatusInternalServerError)
-		return
-	}
+	personID := r.Context().Value("PersonID").(int)
+
 	bpos, err := s.queries.GetBloodPressureObservations(r.Context(), personID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -185,17 +189,14 @@ func (s *App) exportHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
+	personID := r.Context().Value("PersonID").(int)
+
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	personID, exists := r.Context().Value("PersonID").(int)
-	if !exists {
-		http.Error(w, "failed to find logged-in user", http.StatusInternalServerError)
-		return
-	}
 	err = s.queries.DeleteBloodPressureObservation(r.Context(), bpo.DeleteBloodPressureObservationParams{
 		ID:       id,
 		PersonID: personID,
@@ -210,7 +211,7 @@ func (s *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/?editable=true", 303)
+	http.Redirect(w, r, "/?editable=true", http.StatusSeeOther)
 }
 
 func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
@@ -330,7 +331,7 @@ func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	http.Redirect(w, r, "/?editable=true", 303)
+	http.Redirect(w, r, "/?editable=true", http.StatusSeeOther)
 }
 
 func getEnv(key, fallback string) string {
