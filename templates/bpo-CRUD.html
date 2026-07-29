@@ -1,0 +1,49 @@
+<article>
+  <form id="bpo-new" action="/" method="dialog">
+  <input name="id" type="number" value="{{.ID}}" hidden />
+    <fieldset class="grid">
+      <div>
+        <label for="date">Date</label>
+        <input id="bpo-new-date" name="date" type="date" value="{{.ObservedAt.Format `2006-01-02`}}" />
+      </div>
+      <div>
+        <label for="time">Time</label>
+        <input id="bpo-new-time" name="time" type="time" step="60" value="{{.ObservedAt.Format `15:04`}}" />
+      </div>
+    </fieldset>
+    <fieldset class="grid">
+      <div>
+        <label for="systolic">Systolic</label>
+        <input name="systolic" type="number" {{if ne $.ID 0}}value="{{.Systolic}}"{{end}} />
+      </div>
+      <div>
+        <label for="diastolic">Diastolic</label>
+        <input name="diastolic" type="number" {{if ne $.ID 0}}value="{{.Diastolic}}"{{end}} />
+      </div>
+      <div>
+        <label for="pulse">Pulse</label>
+        <input name="pulse" type="number" {{if ne $.ID 0}}value="{{.Pulse}}"{{end}} />
+      </div>
+    </fieldset>
+    <fieldset>
+      <input name="irregular" type="checkbox" {{if .Irregular}}checked{{end}} />
+      <i class="ti ti-heart-bolt"></i>
+      <label for="irregular">Irregular heartbeat</label>
+    </fieldset>
+    <label for="comment">Comment</label>
+    <textarea name="comment" type="text">{{.Comment}}</textarea>
+    <button
+      type="submit"
+      hx-on:htmx:after-request="if(event.detail.successful) { resetFormModal(this) }"
+      {{if ne $.ID 0}}
+      hx-put="/{{.ID}}"
+      hx-target="#bpo-row-{{.ID}}"
+      hx-swap="outerHTML"
+      {{else}}
+      hx-post="/"
+      hx-target="tbody"
+      hx-swap="afterbegin"
+      {{end}}
+      >SAVE</button>
+  </form>
+</article>

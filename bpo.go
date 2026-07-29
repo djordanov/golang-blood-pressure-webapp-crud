@@ -62,6 +62,34 @@ func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *App) getCRUD(w http.ResponseWriter, r *http.Request) {
+	personID := r.Context().Value("PersonID").(int)
+
+	var id int = 0
+	var err error
+	if idPath := r.PathValue("id"); idPath != "" {
+		slog.Debug("Detected ID in URL. Converting to int...", "idPath", idPath)
+		id, err = strconv.Atoi(idPath)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	observation := bpo.GetBloodPressureObservationRow{}
+	if id != 0 {
+		params := bpo.GetBloodPressureObservationParams{PersonID: personID, ID: id}
+		if observation, err = s.queries.GetBloodPressureObservation(r.Context(), params); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if err = templates.ExecuteTemplate(w, "bpo-CRUD.html", observation); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func (s *App) importHandler(w http.ResponseWriter, r *http.Request) {
 	personID := r.Context().Value("PersonID").(int)
 
@@ -414,6 +442,8 @@ func main() {
 	router.Handle("GET /export", app.authMiddleware(http.HandlerFunc(app.exportHandler)))
 	router.Handle("POST /import", app.authMiddleware(http.HandlerFunc(app.importHandler)))
 	router.Handle("GET /", app.authMiddleware(http.HandlerFunc(app.getHandler)))
+	router.Handle("GET /new", app.authMiddleware(http.HandlerFunc(app.getCRUD)))
+	router.Handle("GET /edit/{id}/", app.authMiddleware(http.HandlerFunc(app.getCRUD)))
 	router.Handle("POST /{id}/delete", app.authMiddleware(http.HandlerFunc(app.deleteHandler)))
 	router.Handle("DELETE /{id}/", app.authMiddleware(http.HandlerFunc(app.deleteHandler)))
 	router.Handle("POST /{id}/update", app.authMiddleware(http.HandlerFunc(app.postHandler)))
