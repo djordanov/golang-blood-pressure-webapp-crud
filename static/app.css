@@ -44,6 +44,11 @@ input[type="checkbox"] {
   float: right
 }
 
-.flex {
-  display: flex
+.btn-action-row {
+  display: flex;
+  gap: 9.5px;
+}
+
+.grow-1 {
+  flex-grow: 1;
 }

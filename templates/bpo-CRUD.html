@@ -32,18 +32,31 @@
     </fieldset>
     <label for="comment">Comment</label>
     <textarea name="comment" type="text">{{.Comment}}</textarea>
-    <button
-      type="submit"
-      hx-on:htmx:after-request="if(event.detail.successful) { resetFormModal(this) }"
-      {{if ne $.ID 0}}
-      hx-put="/{{.ID}}"
-      hx-target="#bpo-row-{{.ID}}"
-      hx-swap="outerHTML"
-      {{else}}
-      hx-post="/"
-      hx-target="tbody"
-      hx-swap="afterbegin"
-      {{end}}
-      >SAVE</button>
+    <div class="btn-action-row">
+      <button
+        class="secondary"
+        aria-label="Delete"
+        hx-on:htmx:after-request="if(event.detail.successful) { resetFormModal(this) }"
+        hx-confirm="Are you sure?"
+        hx-delete="/{{.ID}}"
+        hx-target="#bpo-row-{{.ID}}"
+        hx-swap="outerHTML">
+        <i class="ti ti-trash"></i> DELETE
+      </button>
+      <button
+        class="grow-1"
+        aria-label="Save"
+        hx-on:htmx:after-request="if(event.detail.successful) { resetFormModal(this) }"
+        {{if ne $.ID 0}}
+        hx-put="/{{.ID}}"
+        hx-target="#bpo-row-{{.ID}}"
+        hx-swap="outerHTML"
+        {{else}}
+        hx-post="/"
+        hx-target="tbody"
+        hx-swap="afterbegin"
+        {{end}}>
+        <i class="ti ti-plus"></i> SAVE</button>
+    </div>
   </form>
 </article>
