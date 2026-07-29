@@ -12,6 +12,7 @@ import (
 
 type BloodPressureObservation struct {
 	ID         int
+	CreatedAt  time.Time
 	PersonID   int
 	ObservedAt time.Time
 	Systolic   int

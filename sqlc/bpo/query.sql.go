@@ -17,7 +17,7 @@ INSERT INTO blood_pressure_observation
     (observed_at, systolic, diastolic, pulse, irregular, comment, person_id)
 VALUES
     ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, person_id, observed_at, systolic, diastolic, pulse, irregular, comment
+RETURNING id, created_at, person_id, observed_at, systolic, diastolic, pulse, irregular, comment
 `
 
 type CreateBloodPressureObservationParams struct {
@@ -43,6 +43,7 @@ func (q *Queries) CreateBloodPressureObservation(ctx context.Context, arg Create
 	var i BloodPressureObservation
 	err := row.Scan(
 		&i.ID,
+		&i.CreatedAt,
 		&i.PersonID,
 		&i.ObservedAt,
 		&i.Systolic,
@@ -107,6 +108,50 @@ type DeleteBloodPressureObservationParams struct {
 func (q *Queries) DeleteBloodPressureObservation(ctx context.Context, arg DeleteBloodPressureObservationParams) error {
 	_, err := q.db.Exec(ctx, deleteBloodPressureObservation, arg.ID, arg.PersonID)
 	return err
+}
+
+const getBloodPressureObservation = `-- name: GetBloodPressureObservation :one
+SELECT
+    id,
+    observed_at,
+    systolic,
+    diastolic,
+    pulse,
+    irregular,
+    comment
+FROM blood_pressure_observation
+WHERE person_id = $1
+    AND id = $2
+`
+
+type GetBloodPressureObservationParams struct {
+	PersonID int
+	ID       int
+}
+
+type GetBloodPressureObservationRow struct {
+	ID         int
+	ObservedAt time.Time
+	Systolic   int
+	Diastolic  int
+	Pulse      int
+	Irregular  bool
+	Comment    string
+}
+
+func (q *Queries) GetBloodPressureObservation(ctx context.Context, arg GetBloodPressureObservationParams) (GetBloodPressureObservationRow, error) {
+	row := q.db.QueryRow(ctx, getBloodPressureObservation, arg.PersonID, arg.ID)
+	var i GetBloodPressureObservationRow
+	err := row.Scan(
+		&i.ID,
+		&i.ObservedAt,
+		&i.Systolic,
+		&i.Diastolic,
+		&i.Pulse,
+		&i.Irregular,
+		&i.Comment,
+	)
+	return i, err
 }
 
 const getBloodPressureObservations = `-- name: GetBloodPressureObservations :many
@@ -204,7 +249,7 @@ SET
     comment = $6
 WHERE id = $7
     AND person_id = $8
-RETURNING id, person_id, observed_at, systolic, diastolic, pulse, irregular, comment
+RETURNING id, created_at, person_id, observed_at, systolic, diastolic, pulse, irregular, comment
 `
 
 type UpdateBloodPressureObservationParams struct {
@@ -232,6 +277,7 @@ func (q *Queries) UpdateBloodPressureObservation(ctx context.Context, arg Update
 	var i BloodPressureObservation
 	err := row.Scan(
 		&i.ID,
+		&i.CreatedAt,
 		&i.PersonID,
 		&i.ObservedAt,
 		&i.Systolic,

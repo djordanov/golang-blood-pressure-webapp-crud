@@ -44,6 +44,20 @@ WHERE person_id = $1
 ORDER BY observed_at DESC
 ;
 
+-- name: GetBloodPressureObservation :one
+SELECT
+    id,
+    observed_at,
+    systolic,
+    diastolic,
+    pulse,
+    irregular,
+    comment
+FROM blood_pressure_observation
+WHERE person_id = $1
+    AND id = $2
+;
+
 -- name: CreateBloodPressureObservation :one
 INSERT INTO blood_pressure_observation
     (observed_at, systolic, diastolic, pulse, irregular, comment, person_id)
