@@ -25,7 +25,7 @@ var baseURL = func() string {
 }()
 
 var googleOauthConfig = &oauth2.Config{
-	RedirectURL:  baseURL + "/auth/google/callback",
+	RedirectURL:  baseURL + "/auth/google/callback/",
 	ClientID:     os.Getenv("GOOGLE_OAUTH_CLIENT_ID"),
 	ClientSecret: os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
 	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
@@ -151,13 +151,13 @@ func (s *App) authMiddleware(next http.Handler) http.Handler {
 		cookie, err := r.Cookie("bpo-session")
 		slog.Debug("Read session cookie", "cookie", cookie)
 		if err != nil || cookie.Value == "" {
-			http.Redirect(w, r, "/auth/google/login", http.StatusTemporaryRedirect)
+			http.Redirect(w, r, "/auth/google/login/", http.StatusTemporaryRedirect)
 			return
 		}
 
 		sessionId, err := uuid.Parse(cookie.Value)
 		if err != nil {
-			http.Redirect(w, r, "/auth/google/login", http.StatusTemporaryRedirect)
+			http.Redirect(w, r, "/auth/google/login/", http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -165,7 +165,7 @@ func (s *App) authMiddleware(next http.Handler) http.Handler {
 		slog.Debug("Read session", "session", session)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, pgx.ErrTooManyRows) {
-				http.Redirect(w, r, "/auth/google/login", http.StatusTemporaryRedirect)
+				http.Redirect(w, r, "/auth/google/login/", http.StatusTemporaryRedirect)
 				return
 			} else {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -175,7 +175,7 @@ func (s *App) authMiddleware(next http.Handler) http.Handler {
 
 		slog.Debug("Checking session authentication", "ExpiresAt", session.ExpiresAt)
 		if session.ExpiresAt.Before(time.Now()) {
-			http.Redirect(w, r, "/auth/google/login", http.StatusTemporaryRedirect)
+			http.Redirect(w, r, "/auth/google/login/", http.StatusTemporaryRedirect)
 			return
 		}
 

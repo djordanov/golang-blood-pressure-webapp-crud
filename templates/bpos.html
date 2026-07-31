@@ -23,12 +23,11 @@
 
       <div class="float-right">
         <button class="secondary" command="show-modal" commandfor="import-dialog">        <i class="ti ti-upload"></i> IMPORT</button>
-        <a class="secondary" role="button" href="/export"><i class="ti ti-download"></i> EXPORT</a>
+        <a class="secondary" role="button" href="/export/"><i class="ti ti-download"></i> EXPORT</a>
       </div>
     </div>
 
     <colgroup>
-      <col class="id-col">
       <col class="date-col">
       <col class="time-col">
       <col class="irregular-col">
@@ -41,7 +40,6 @@
     <table>
       <thead>
         <tr>
-          <th hidden>ID</th>
           <th>Date</th>
           <th>Time</th>
           <th aria-label="irregular heartbeat"><i class="ti ti-heart-bolt"></i></th>
@@ -61,7 +59,7 @@
     </table>
     <button
        class="w-100"
-       hx-get="/new"
+       hx-get="/new/"
        hx-target="#bpo-CRUD-dialog"
        hx-swap="innerHTML"
        hx-on::after-request="document.querySelector('#bpo-CRUD-dialog').showModal(); setDefaultDateTime();"><i class="ti ti-plus"></i> ADD NEW</button>
@@ -71,7 +69,7 @@
 
     <dialog id="import-dialog" closedby="any">
       <article>
-        <form method="post" action="/import">
+        <form method="post" action="/import/">
           <label for="import-csv">
             <b>Observations to Import</b>
           </label>

@@ -11,7 +11,7 @@
     <button
        aria-label="Edit"
        class="secondary w-100"
-       hx-get="/edit/{{.ID}}"
+       hx-get="/edit/{{.ID}}/"
        hx-target="#bpo-CRUD-dialog"
        hx-swap="innerHTML"
        hx-on::after-request="document.querySelector('#bpo-CRUD-dialog').showModal();">

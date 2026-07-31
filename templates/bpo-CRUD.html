@@ -39,7 +39,7 @@
         aria-label="Delete"
         hx-on:htmx:after-request="if(event.detail.successful) { resetFormModal(this) }"
         hx-confirm="Are you sure?"
-        hx-delete="/{{.ID}}"
+        hx-delete="/{{.ID}}/"
         hx-target="#bpo-row-{{.ID}}"
         hx-swap="outerHTML">
         <i class="ti ti-trash"></i> DELETE
@@ -50,7 +50,7 @@
         hx-on:htmx:after-request="if(event.detail.successful) { resetFormModal(this) }"
         {{if ne $.ID 0}}
         aria-label="Update"
-        hx-put="/{{.ID}}"
+        hx-put="/{{.ID}}/"
         hx-target="#bpo-row-{{.ID}}"
         hx-swap="outerHTML"
         {{else}}

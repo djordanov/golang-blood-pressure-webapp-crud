@@ -22,8 +22,7 @@ type App struct {
 }
 
 type TemplateContext struct {
-	Bpos     []bpo.GetBloodPressureObservationsRow
-	Editable bool
+	Bpos []bpo.GetBloodPressureObservationsRow
 }
 
 //go:embed templates/*.html
@@ -364,16 +363,16 @@ func main() {
 
 	slog.Info("Attaching HTTP handlers...")
 	router := http.NewServeMux()
-	router.Handle("GET /auth/google/login", http.HandlerFunc(oauthGoogleLogin))
-	router.Handle("GET /auth/google/callback", http.HandlerFunc(app.oauthGoogleCallback))
+	router.Handle("GET /auth/google/login/", http.HandlerFunc(oauthGoogleLogin))
+	router.Handle("GET /auth/google/callback/", http.HandlerFunc(app.oauthGoogleCallback))
 
 	router.Handle("GET /static/", http.FileServerFS(staticFS))
-	router.Handle("GET /export", app.authMiddleware(http.HandlerFunc(app.exportHandler)))
-	router.Handle("POST /import", app.authMiddleware(http.HandlerFunc(app.importHandler)))
+	router.Handle("GET /export/", app.authMiddleware(http.HandlerFunc(app.exportHandler)))
+	router.Handle("POST /import/", app.authMiddleware(http.HandlerFunc(app.importHandler)))
 
 	router.Handle("GET /", app.authMiddleware(http.HandlerFunc(app.getHandler)))
 	router.Handle("POST /", app.authMiddleware(http.HandlerFunc(app.postHandler)))
-	router.Handle("GET /new", app.authMiddleware(http.HandlerFunc(app.getCRUD)))
+	router.Handle("GET /new/", app.authMiddleware(http.HandlerFunc(app.getCRUD)))
 	router.Handle("GET /edit/{id}/", app.authMiddleware(http.HandlerFunc(app.getCRUD)))
 	router.Handle("DELETE /{id}/", app.authMiddleware(http.HandlerFunc(app.deleteHandler)))
 	router.Handle("PUT /{id}/", app.authMiddleware(http.HandlerFunc(app.postHandler)))
