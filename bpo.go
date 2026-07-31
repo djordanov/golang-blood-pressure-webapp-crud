@@ -66,6 +66,7 @@ func (s *App) getCRUD(w http.ResponseWriter, r *http.Request) {
 	observation := bpo.GetBloodPressureObservationRow{}
 	if id != 0 {
 		params := bpo.GetBloodPressureObservationParams{PersonID: personID, ID: id}
+		slog.Debug("Fetching observation", "params", params)
 		if observation, err = s.queries.GetBloodPressureObservation(r.Context(), params); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -223,6 +224,85 @@ func (s *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (s *App) putHandler(w http.ResponseWriter, r *http.Request) {
+	personID := r.Context().Value("PersonID").(int)
+
+	var id int = 0
+	var err error
+	if idPath := r.PathValue("id"); idPath != "" {
+		slog.Debug("Detected ID in URL. Converting to int...", "idPath", idPath)
+		id, err = strconv.Atoi(idPath)
+		if err != nil || id == 0 {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	slog.Debug("Parsing POST arguments...")
+	datetimestr := r.PostFormValue("date") + "T" + r.PostFormValue("time")
+	observedAt, err := time.Parse("2006-01-02T15:04", datetimestr) // local time from the users perspective, do not track timezone or convert
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	systolic, err := strconv.Atoi(r.PostFormValue("systolic"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	diastolic, err := strconv.Atoi(r.PostFormValue("diastolic"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	pulse, err := strconv.Atoi(r.PostFormValue("pulse"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	irregular := r.PostFormValue("irregular") != ""
+	comment := r.FormValue("comment")
+
+	slog.Debug(
+		"Parsed POST arguments",
+		"observedAt",
+		observedAt,
+		"systolic",
+		systolic,
+		"diastolic",
+		diastolic,
+		"pulse",
+		pulse,
+		"irregular",
+		irregular,
+		"comment",
+		comment,
+	)
+
+	updateParams := bpo.UpdateBloodPressureObservationParams{
+		ObservedAt: observedAt,
+		Irregular:  irregular,
+		Systolic:   systolic,
+		Diastolic:  diastolic,
+		Pulse:      pulse,
+		Comment:    comment,
+		ID:         id,
+		PersonID:   personID,
+	}
+
+	slog.Debug("Updating observation", "observation", updateParams)
+	getReturned, err := s.queries.UpdateBloodPressureObservation(r.Context(), updateParams)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err = templates.ExecuteTemplate(w, "bpo-row", getReturned); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
 	personID := r.Context().Value("PersonID").(int)
 
@@ -375,7 +455,7 @@ func main() {
 	router.Handle("GET /new/", app.authMiddleware(http.HandlerFunc(app.getCRUD)))
 	router.Handle("GET /edit/{id}/", app.authMiddleware(http.HandlerFunc(app.getCRUD)))
 	router.Handle("DELETE /{id}/", app.authMiddleware(http.HandlerFunc(app.deleteHandler)))
-	router.Handle("PUT /{id}/", app.authMiddleware(http.HandlerFunc(app.postHandler)))
+	router.Handle("PUT /{id}/", app.authMiddleware(http.HandlerFunc(app.putHandler)))
 
 	slog.Info("Starting server...")
 
