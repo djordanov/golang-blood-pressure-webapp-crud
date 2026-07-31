@@ -1,6 +1,5 @@
 {{define "bpo-row"}}
 <tr id="bpo-row-{{.ID}}">
-  <td hidden></td>
   <td>{{.ObservedAt.Format `Mon. 02 January 2006`}}</td>
   <td>{{.ObservedAt.Format `15:04`}}</td>
   <td>{{if .Irregular}}<i class="ti ti-bolt"></i>{{end}}</td>
@@ -13,9 +12,9 @@
        aria-label="Edit"
        class="secondary w-100"
        command="show-modal"
-       commandfor="add-new-bpo-dialog"
+       commandfor="bpo-CRUD-dialog"
        hx-get="/edit/{{.ID}}"
-       hx-target="#add-new-bpo-dialog"
+       hx-target="#bpo-CRUD-dialog"
        hx-swap="innerHTML">
       <i class="ti ti-edit"></i> EDIT
     </button>

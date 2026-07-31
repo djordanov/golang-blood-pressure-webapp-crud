@@ -27,11 +27,6 @@ input[type="checkbox"] {
   width: 5rem;
 }
 
-.action-col {
-  display: flex;
-  gap: 0.5rem;
-}
-
 /* backported from Tailwind*/
 /* https://tailwindcss.com/ */
 /* it's not really worth including whole tailwind just for a few classes */

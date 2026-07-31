@@ -4,11 +4,11 @@
     <fieldset class="grid">
       <div>
         <label for="date">Date</label>
-        <input id="bpo-new-date" name="date" type="date" value="{{.ObservedAt.Format `2006-01-02`}}" />
+        <input id="bpo-date" name="date" type="date" value="{{.ObservedAt.Format `2006-01-02`}}" />
       </div>
       <div>
         <label for="time">Time</label>
-        <input id="bpo-new-time" name="time" type="time" step="60" value="{{.ObservedAt.Format `15:04`}}" />
+        <input id="bpo-time" name="time" type="time" step="60" value="{{.ObservedAt.Format `15:04`}}" />
       </div>
     </fieldset>
     <fieldset class="grid">
@@ -33,6 +33,7 @@
     <label for="comment">Comment</label>
     <textarea name="comment" type="text">{{.Comment}}</textarea>
     <div class="btn-action-row">
+      {{if ne .ID 0}}
       <button
         class="secondary"
         aria-label="Delete"
@@ -43,20 +44,23 @@
         hx-swap="outerHTML">
         <i class="ti ti-trash"></i> DELETE
       </button>
+      {{end}}
       <button
         class="grow-1"
-        aria-label="Save"
         hx-on:htmx:after-request="if(event.detail.successful) { resetFormModal(this) }"
         {{if ne $.ID 0}}
+        aria-label="Update"
         hx-put="/{{.ID}}"
         hx-target="#bpo-row-{{.ID}}"
         hx-swap="outerHTML"
         {{else}}
+        aria-label="Create"
         hx-post="/"
         hx-target="tbody"
         hx-swap="afterbegin"
         {{end}}>
-        <i class="ti ti-plus"></i> SAVE</button>
+        <i class="ti ti-check"></i> SAVE
+      </button>
     </div>
   </form>
 </article>
