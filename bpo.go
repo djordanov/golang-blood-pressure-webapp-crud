@@ -225,21 +225,15 @@ func (s *App) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.queries.DeleteBloodPressureObservation(r.Context(), bpo.DeleteBloodPressureObservationParams{
+	if err = s.queries.DeleteBloodPressureObservation(r.Context(), bpo.DeleteBloodPressureObservationParams{
 		ID:       id,
 		PersonID: personID,
-	})
-	if err != nil {
+	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if hxHeader := r.Header.Get("HX-Request"); hxHeader == "true" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	http.Redirect(w, r, "/?editable=true", http.StatusSeeOther)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
