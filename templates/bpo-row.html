@@ -8,10 +8,10 @@
   <td>{{.Diastolic}}</td>
   <td>{{.Pulse}}</td>
   <td>{{.Comment}}</td>
-  <td class="action-col">
+  <td>
     <button
        aria-label="Edit"
-       class="secondary"
+       class="secondary w-100"
        command="show-modal"
        commandfor="add-new-bpo-dialog"
        hx-get="/edit/{{.ID}}"

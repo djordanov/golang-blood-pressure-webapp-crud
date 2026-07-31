@@ -22,19 +22,11 @@
       <h1>Blood Pressure</h1>
 
       <div class="float-right">
-        {{if .Editable}}
-        <a class="secondary" aria-label="action" href="/" role="button">CANCEL</a>
-        {{else}}
-        <a class="secondary" aria-label="action" href="/?editable=true" role="button">EDIT</a>
-        {{end}}
         <button class="secondary" command="show-modal" commandfor="import-dialog">IMPORT</button>
         <a class="secondary" role="button" href="/export">EXPORT</a>
       </div>
     </div>
 
-    {{range .Bpos}}
-    <form id="bpo-{{.ID}}" action="/{{.ID}}/update" method="post"></form>
-    {{end}}
     <colgroup>
       <col class="id-col">
       <col class="date-col">
@@ -63,11 +55,7 @@
       </thead>
       <tbody>
         {{range .Bpos}}
-        {{if $.Editable}}
-        {{template "bpo-row-editable" .}}
-        {{else}}
         {{template "bpo-row" .}}
-        {{end}}
         {{end}}
       </tbody>
     </table>

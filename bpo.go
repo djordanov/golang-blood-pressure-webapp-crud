@@ -36,27 +36,15 @@ var staticFS embed.FS
 func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 	personID := r.Context().Value("PersonID").(int)
 
-	editableString := r.FormValue("editable")
-	editable := false
-	if editableString != "" {
-		var err error
-		editable, err = strconv.ParseBool(editableString)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-
 	bpos, err := s.queries.GetBloodPressureObservations(r.Context(), personID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	templateContext := TemplateContext{Bpos: bpos, Editable: editable}
+	templateContext := TemplateContext{Bpos: bpos}
 
-	err = templates.ExecuteTemplate(w, "bpos.html", templateContext)
-	if err != nil {
+	if err = templates.ExecuteTemplate(w, "bpos.html", templateContext); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -156,8 +144,8 @@ func (s *App) importHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		slog.Debug("Creating new observation", "observation", observation)
-		_, err = s.queries.CreateBloodPressureObservation(r.Context(), observation)
-		if err != nil {
+
+		if _, err = s.queries.CreateBloodPressureObservation(r.Context(), observation); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
