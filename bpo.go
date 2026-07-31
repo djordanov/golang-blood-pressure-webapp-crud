@@ -270,19 +270,8 @@ func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
 	irregular := r.PostFormValue("irregular") != ""
 	comment := r.FormValue("comment")
 
-	var id int = 0
-	if idPath := r.PathValue("id"); idPath != "" {
-		slog.Debug("Detected ID in URL. Converting to int...", "idPath", idPath)
-		id, err = strconv.Atoi(idPath)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	}
 	slog.Debug(
 		"Parsed POST arguments",
-		"id",
-		id,
 		"systolic",
 		systolic,
 		"diastolic",
@@ -295,71 +284,28 @@ func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
 		comment,
 	)
 
-	var o bpo.GetBloodPressureObservationsRow
-	//
-	if id == 0 {
-		observation := bpo.CreateBloodPressureObservationParams{
-			ObservedAt: observedAt,
-			Systolic:   systolic,
-			Diastolic:  diastolic,
-			Pulse:      pulse,
-			Irregular:  irregular,
-			Comment:    comment,
-			PersonID:   personID,
-		}
-
-		slog.Debug("Creating new observation", "observation", observation)
-		getReturned, err := s.queries.CreateBloodPressureObservation(r.Context(), observation)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		slog.Debug("Created new observation", "observation", observation)
-		o.ID = getReturned.ID
-		o.ObservedAt = getReturned.ObservedAt
-		o.Irregular = getReturned.Irregular
-		o.Systolic = getReturned.Systolic
-		o.Diastolic = getReturned.Diastolic
-		o.Pulse = getReturned.Pulse
-		o.Comment = getReturned.Comment
-	} else {
-		observation := bpo.UpdateBloodPressureObservationParams{
-			ObservedAt: observedAt,
-			ID:         id,
-			Systolic:   systolic,
-			Diastolic:  diastolic,
-			Pulse:      pulse,
-			Irregular:  irregular,
-			Comment:    comment,
-			PersonID:   personID,
-		}
-
-		slog.Debug("Updating observation", "observation", observation)
-		updatedReturned, err := s.queries.UpdateBloodPressureObservation(r.Context(), observation)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		slog.Debug("Updated observation", "observation", observation)
-		o.ID = updatedReturned.ID
-		o.ObservedAt = updatedReturned.ObservedAt
-		o.Irregular = updatedReturned.Irregular
-		o.Systolic = updatedReturned.Systolic
-		o.Diastolic = updatedReturned.Diastolic
-		o.Pulse = updatedReturned.Pulse
-		o.Comment = updatedReturned.Comment
+	observation := bpo.CreateBloodPressureObservationParams{
+		ObservedAt: observedAt,
+		Systolic:   systolic,
+		Diastolic:  diastolic,
+		Pulse:      pulse,
+		Irregular:  irregular,
+		Comment:    comment,
+		PersonID:   personID,
 	}
 
-	if hxHeader := r.Header.Get("HX-Request"); hxHeader == "true" {
-		err = templates.ExecuteTemplate(w, "bpo-row", o)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	slog.Debug("Creating new observation", "observation", observation)
+	getReturned, err := s.queries.CreateBloodPressureObservation(r.Context(), observation)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	http.Redirect(w, r, "/?editable=true", http.StatusSeeOther)
+	err = templates.ExecuteTemplate(w, "bpo-row", getReturned)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func getEnv(key, fallback string) string {
@@ -438,17 +384,17 @@ func main() {
 	router := http.NewServeMux()
 	router.Handle("GET /auth/google/login", http.HandlerFunc(oauthGoogleLogin))
 	router.Handle("GET /auth/google/callback", http.HandlerFunc(app.oauthGoogleCallback))
+
 	router.Handle("GET /static/", http.FileServerFS(staticFS))
 	router.Handle("GET /export", app.authMiddleware(http.HandlerFunc(app.exportHandler)))
 	router.Handle("POST /import", app.authMiddleware(http.HandlerFunc(app.importHandler)))
+
 	router.Handle("GET /", app.authMiddleware(http.HandlerFunc(app.getHandler)))
+	router.Handle("POST /", app.authMiddleware(http.HandlerFunc(app.postHandler)))
 	router.Handle("GET /new", app.authMiddleware(http.HandlerFunc(app.getCRUD)))
 	router.Handle("GET /edit/{id}/", app.authMiddleware(http.HandlerFunc(app.getCRUD)))
-	router.Handle("POST /{id}/delete", app.authMiddleware(http.HandlerFunc(app.deleteHandler)))
 	router.Handle("DELETE /{id}/", app.authMiddleware(http.HandlerFunc(app.deleteHandler)))
-	router.Handle("POST /{id}/update", app.authMiddleware(http.HandlerFunc(app.postHandler)))
 	router.Handle("PUT /{id}/", app.authMiddleware(http.HandlerFunc(app.postHandler)))
-	router.Handle("POST /", app.authMiddleware(http.HandlerFunc(app.postHandler)))
 
 	slog.Info("Starting server...")
 
