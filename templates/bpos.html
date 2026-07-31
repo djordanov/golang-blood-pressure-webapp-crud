@@ -61,12 +61,10 @@
     </table>
     <button
        class="w-100"
-       command="show-modal"
-       commandfor="bpo-CRUD-dialog"
        hx-get="/new"
        hx-target="#bpo-CRUD-dialog"
        hx-swap="innerHTML"
-       hx-on::after-request="setDefaultDateTime()"><i class="ti ti-plus"></i> ADD NEW</button>
+       hx-on::after-request="document.querySelector('#bpo-CRUD-dialog').showModal(); setDefaultDateTime();"><i class="ti ti-plus"></i> ADD NEW</button>
     <dialog id="bpo-CRUD-dialog" closedby="any">
       <!-- dynamically filled via HTMX -->
     </dialog>
