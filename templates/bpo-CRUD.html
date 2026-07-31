@@ -1,28 +1,27 @@
 <article>
   <form id="bpo-new" action="/" method="dialog">
-  <input name="id" type="number" value="{{.ID}}" hidden />
     <fieldset class="grid">
       <div>
-        <label for="date">Date</label>
-        <input id="bpo-date" name="date" type="date" value="{{.ObservedAt.Format `2006-01-02`}}" />
+        <label for="date">Date*</label>
+        <input id="bpo-date" name="date" required type="date" value="{{.ObservedAt.Format `2006-01-02`}}" />
       </div>
       <div>
-        <label for="time">Time</label>
-        <input id="bpo-time" name="time" type="time" step="60" value="{{.ObservedAt.Format `15:04`}}" />
+        <label for="time">Time*</label>
+        <input id="bpo-time" name="time" required type="time" step="60" value="{{.ObservedAt.Format `15:04`}}" />
       </div>
     </fieldset>
     <fieldset class="grid">
       <div>
-        <label for="systolic">Systolic</label>
-        <input name="systolic" type="number" {{if ne $.ID 0}}value="{{.Systolic}}"{{end}} />
+        <label for="systolic">Systolic*</label>
+        <input name="systolic" required min="0" step="1" type="number" {{if ne $.ID 0}}value="{{.Systolic}}"{{end}} />
       </div>
       <div>
-        <label for="diastolic">Diastolic</label>
-        <input name="diastolic" type="number" {{if ne $.ID 0}}value="{{.Diastolic}}"{{end}} />
+        <label for="diastolic">Diastolic*</label>
+        <input name="diastolic" required min="0" step="1" type="number" {{if ne $.ID 0}}value="{{.Diastolic}}"{{end}} />
       </div>
       <div>
-        <label for="pulse">Pulse</label>
-        <input name="pulse" type="number" {{if ne $.ID 0}}value="{{.Pulse}}"{{end}} />
+        <label for="pulse">Pulse*</label>
+        <input name="pulse" required min="0" step="1" type="number" {{if ne $.ID 0}}value="{{.Pulse}}"{{end}} />
       </div>
     </fieldset>
     <fieldset>
@@ -41,13 +40,15 @@
         hx-confirm="Are you sure?"
         hx-delete="/{{.ID}}/"
         hx-target="#bpo-row-{{.ID}}"
-        hx-swap="outerHTML">
+        hx-swap="delete">
         <i class="ti ti-trash"></i> DELETE
       </button>
       {{end}}
       <button
         class="grow-1"
         hx-on:htmx:after-request="if(event.detail.successful) { resetFormModal(this) }"
+        hx-validate="true"
+        hx-on:htmx:validation:halted="this.closest('form').reportValidity()"
         {{if ne $.ID 0}}
         aria-label="Update"
         hx-put="/{{.ID}}/"
