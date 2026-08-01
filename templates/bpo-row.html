@@ -5,8 +5,8 @@
   <td>{{if .Irregular}}<i class="ti ti-bolt"></i>{{end}}</td>
   <td>{{.Systolic}}</td>
   <td>{{.Diastolic}}</td>
-  <td>{{.Pulse}}</td>
-  <td>{{.Comment}}</td>
+  <td class="hide-on-mobile">{{.Pulse}}</td>
+  <td class="hide-on-mobile">{{.Comment}}</td>
   <td>
     <button
        aria-label="Edit"
@@ -15,7 +15,8 @@
        hx-target="#bpo-CRUD-dialog"
        hx-swap="innerHTML"
        hx-on::after-request="document.querySelector('#bpo-CRUD-dialog').showModal();">
-      <i class="ti ti-edit"></i> EDIT
+      <i class="ti ti-edit"></i>
+      <span class="hide-on-mobile">EDIT</span>
     </button>
   </td>
 </tr>

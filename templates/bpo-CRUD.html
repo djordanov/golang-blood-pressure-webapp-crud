@@ -41,7 +41,8 @@
         hx-delete="/{{.ID}}/"
         hx-target="#bpo-row-{{.ID}}"
         hx-swap="delete">
-        <i class="ti ti-trash"></i> DELETE
+        <i class="ti ti-trash"></i>
+        <span class="hide-on-mobile">DELETE</span>
       </button>
       {{end}}
       <button
@@ -60,7 +61,8 @@
         hx-target="tbody"
         hx-swap="afterbegin"
         {{end}}>
-        <i class="ti ti-check"></i> SAVE
+        <i class="ti ti-check"></i>
+        <span>SAVE</span>
       </button>
     </div>
   </form>

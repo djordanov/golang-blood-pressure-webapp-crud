@@ -16,27 +16,23 @@
 </head>
 
 <body>
-  <main class="container">
+  <main class="container-fluid">
 
     <div>
       <h1>Blood Pressure</h1>
 
       <div class="float-right">
-        <button class="secondary" command="show-modal" commandfor="import-dialog"><i class="ti ti-upload"></i> IMPORT</button>
-        <a class="secondary" role="button" href="/export/"><i class="ti ti-download"></i> EXPORT</a>
+        <button class="secondary" command="show-modal" commandfor="import-dialog">
+          <i class="ti ti-upload"></i>
+          <span class="hide-on-mobile">IMPORT</span>
+        </button>
+        <a class="secondary" role="button" href="/export/">
+          <i class="ti ti-download"></i>
+          <span class="hide-on-mobile">EXPORT</span>
+        </a>
       </div>
     </div>
 
-     <colgroup>
-      <col class="date-col">
-      <col class="time-col">
-      <col class="irregular-col">
-      <col class="systolic-col">
-      <col class="diastolic-col">
-      <col class="pulse-col">
-      <col class="comment-col">
-      <col class="action-col">
-    </colgroup>
     <table>
       <thead>
         <tr>
@@ -45,8 +41,8 @@
           <th aria-label="irregular heartbeat"><i class="ti ti-heart-bolt"></i></th>
           <th>Systolic</th>
           <th>Diastolic</th>
-          <th>Pulse</th>
-          <th>Comment</th>
+          <th class="hide-on-mobile">Pulse</th>
+          <th class="hide-on-mobile">Comment</th>
           <th>
           </th>
         </tr>
@@ -92,7 +88,10 @@
           <textarea id="import-csv" name="import-csv" rows="10" cols="30" placeholder="ObservedAt;Irregular Heartbeat;Systolic;Diastolic;Pulse;Comment
 2026-07-09T22:41;false;9;8;7;Test1;
 2026-07-09T11:18;false;1;2;1;Test2;"></textarea>
-          <button type="submit">CREATE</button>
+          <button type="submit">
+            <i class="ti ti-check"></i>
+            <span>CREATE</span>
+          </button>
         </form>
       </article>
     </dialog>
