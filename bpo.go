@@ -480,7 +480,7 @@ func main() {
 
 	slog.Info("Attaching HTTP handlers...")
 	router := http.NewServeMux()
-	router.Handle("GET /auth/google/login/", http.HandlerFunc(oauthGoogleLogin))
+	router.Handle("GET /auth/google/login/", http.HandlerFunc(app.oauthGoogleLogin))
 	router.Handle("GET /auth/google/callback/", http.HandlerFunc(app.oauthGoogleCallback))
 
 	router.Handle("GET /static/", http.FileServerFS(staticFS))

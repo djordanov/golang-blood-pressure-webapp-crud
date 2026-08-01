@@ -32,7 +32,7 @@ var googleOauthConfig = &oauth2.Config{
 	Endpoint:     google.Endpoint,
 }
 
-func oauthGoogleLogin(w http.ResponseWriter, r *http.Request) {
+func (s *App) oauthGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	expiration := time.Now().Add(10 * time.Minute)
 
 	b := make([]byte, 16)
@@ -41,6 +41,7 @@ func oauthGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	cookie := http.Cookie{
 		Name:     "oauthstate",
 		Value:    oauthState,
+		Path:     "/",
 		Expires:  expiration,
 		Secure:   true,
 		HttpOnly: true,
