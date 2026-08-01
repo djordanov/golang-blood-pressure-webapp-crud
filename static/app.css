@@ -26,6 +26,16 @@ table td:nth-child(6) {
   text-align: right;
 }
 
+#header {
+  display: flex;
+  gap: var(--pico-spacing);
+  margin: var(--pico-spacing) 0 var(--pico-spacing) 0;
+}
+
+h1 {
+  flex-grow: 1;
+}
+
 /* backported from Tailwind*/
 /* https://tailwindcss.com/ */
 /* it's not really worth including whole tailwind just for a few classes */

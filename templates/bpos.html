@@ -18,19 +18,16 @@
 <body>
   <main class="container-fluid">
 
-    <div>
+    <div id="header">
       <h1>Blood Pressure</h1>
-
-      <div class="float-right">
-        <button class="secondary" command="show-modal" commandfor="import-dialog">
-          <i class="ti ti-upload"></i>
-          <span class="hide-on-mobile">IMPORT</span>
-        </button>
-        <a class="secondary" role="button" href="/export/">
-          <i class="ti ti-download"></i>
-          <span class="hide-on-mobile">EXPORT</span>
-        </a>
-      </div>
+      <button class="secondary" command="show-modal" commandfor="import-dialog">
+        <i class="ti ti-upload"></i>
+        <span class="hide-on-mobile">IMPORT</span>
+      </button>      
+      <a class="secondary" role="button" href="/export/">
+        <i class="ti ti-download"></i>
+        <span class="hide-on-mobile">EXPORT</span>
+      </a>
     </div>
 
     <table>
@@ -53,28 +50,26 @@
         {{end}}
       </tbody>
     </table>
+
+    <div class="flex">
+      <span>Displaying {{len .Bpos}} of {{.Total}}</span>
+      {{range .Pages}}
+      <a href="/page-size={{.PageSize}}&page-number={{.PageNumber}}">{{.PageNumber}}</a>
+      {{end}}
+
+      <form method="get" action="/">
+        <label for="page-size">Page Size</label>
+        <input id="page-size" name="page-size" required type="number" step="1" value="{{.PageSize}}" />
+        <button type="submit">OK</button>
+      </form>
+    </div>
+
     <button
        class="w-100"
        hx-get="/new/"
        hx-target="#bpo-CRUD-dialog"
        hx-swap="innerHTML"
        hx-on::after-request="document.querySelector('#bpo-CRUD-dialog').showModal(); setDefaultDateTime();"><i class="ti ti-plus"></i> ADD NEW</button>
-    <form method="get" action="/">
-      <fieldset class="grid">
-        <div>
-          <label for="page-size">Page Size</label>
-          <input id="page-size" name="page-size" required type="number" step="1" value="{{.PageSize}}" />
-        </div>
-        <div>
-          <label for="page-number">Page Number</label>
-          <input id="page-number" name="page-number" required type="number" step="1" value="{{.PageNumber}}" />
-        </div>
-        <div>
-          <label>Placeholder</label>
-          <button type="submit">OK</button>
-        </div>
-      </fieldset>
-    </form>
 
     <dialog id="bpo-CRUD-dialog" closedby="any">
       <!-- dynamically filled via HTMX -->
