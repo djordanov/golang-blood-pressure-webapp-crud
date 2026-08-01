@@ -166,7 +166,15 @@ SELECT
 FROM blood_pressure_observation
 WHERE person_id = $1
 ORDER BY observed_at DESC
+LIMIT $2
+OFFSET $3
 `
+
+type GetBloodPressureObservationsParams struct {
+	PersonID int
+	Limit    int32
+	Offset   int32
+}
 
 type GetBloodPressureObservationsRow struct {
 	ID         int
@@ -178,8 +186,8 @@ type GetBloodPressureObservationsRow struct {
 	Comment    string
 }
 
-func (q *Queries) GetBloodPressureObservations(ctx context.Context, personID int) ([]GetBloodPressureObservationsRow, error) {
-	rows, err := q.db.Query(ctx, getBloodPressureObservations, personID)
+func (q *Queries) GetBloodPressureObservations(ctx context.Context, arg GetBloodPressureObservationsParams) ([]GetBloodPressureObservationsRow, error) {
+	rows, err := q.db.Query(ctx, getBloodPressureObservations, arg.PersonID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

@@ -27,6 +27,22 @@
       </div>
     </div>
 
+    <form method="get" action="/">
+      <fieldset class="grid">
+        <div>
+          <label for="page-size">Page Size</label>
+          <input id="page-size" name="page-size" required type="number" step="1" value="10" />
+        </div>
+        <div>
+          <label for="page-number">Page Number</label>
+          <input id="page-number" name="page-number" required type="number" step="1" value="1" />
+        </div>
+        <div>
+          <label>Placeholder</label>
+          <button type="submit">OK</button>
+        </div>
+      </fieldset>
+    </form>
     <colgroup>
       <col class="date-col">
       <col class="time-col">

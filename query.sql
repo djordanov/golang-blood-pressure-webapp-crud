@@ -42,6 +42,8 @@ SELECT
 FROM blood_pressure_observation
 WHERE person_id = $1
 ORDER BY observed_at DESC
+LIMIT $2
+OFFSET $3
 ;
 
 -- name: GetBloodPressureObservation :one

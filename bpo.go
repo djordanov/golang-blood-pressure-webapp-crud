@@ -34,8 +34,32 @@ var staticFS embed.FS
 
 func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 	personID := r.Context().Value("PersonID").(int)
+	pageSize := 10
+	pageNumber := 1
+	var err error
 
-	bpos, err := s.queries.GetBloodPressureObservations(r.Context(), personID)
+	if pageSizeParam := r.URL.Query().Get("page-size"); pageSizeParam != "" {
+		pageSize, err = strconv.Atoi(pageSizeParam)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	if pageNumberParam := r.URL.Query().Get("page-number"); pageNumberParam != "" {
+		pageNumber, err = strconv.Atoi(pageNumberParam)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	params := bpo.GetBloodPressureObservationsParams{
+		PersonID: personID,
+		Limit:    int32(pageSize),
+		Offset:   int32(pageSize) * (int32(pageNumber - 1)),
+	}
+	bpos, err := s.queries.GetBloodPressureObservations(r.Context(), params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -157,7 +181,12 @@ func (s *App) importHandler(w http.ResponseWriter, r *http.Request) {
 func (s *App) exportHandler(w http.ResponseWriter, r *http.Request) {
 	personID := r.Context().Value("PersonID").(int)
 
-	bpos, err := s.queries.GetBloodPressureObservations(r.Context(), personID)
+	params := bpo.GetBloodPressureObservationsParams{
+		PersonID: personID,
+		Limit:    1<<31 - 1,
+		Offset:   0,
+	}
+	bpos, err := s.queries.GetBloodPressureObservations(r.Context(), params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
