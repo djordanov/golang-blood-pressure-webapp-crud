@@ -27,23 +27,7 @@
       </div>
     </div>
 
-    <form method="get" action="/">
-      <fieldset class="grid">
-        <div>
-          <label for="page-size">Page Size</label>
-          <input id="page-size" name="page-size" required type="number" step="1" value="10" />
-        </div>
-        <div>
-          <label for="page-number">Page Number</label>
-          <input id="page-number" name="page-number" required type="number" step="1" value="1" />
-        </div>
-        <div>
-          <label>Placeholder</label>
-          <button type="submit">OK</button>
-        </div>
-      </fieldset>
-    </form>
-    <colgroup>
+     <colgroup>
       <col class="date-col">
       <col class="time-col">
       <col class="irregular-col">
@@ -79,10 +63,26 @@
        hx-target="#bpo-CRUD-dialog"
        hx-swap="innerHTML"
        hx-on::after-request="document.querySelector('#bpo-CRUD-dialog').showModal(); setDefaultDateTime();"><i class="ti ti-plus"></i> ADD NEW</button>
+    <form method="get" action="/">
+      <fieldset class="grid">
+        <div>
+          <label for="page-size">Page Size</label>
+          <input id="page-size" name="page-size" required type="number" step="1" value="{{.PageSize}}" />
+        </div>
+        <div>
+          <label for="page-number">Page Number</label>
+          <input id="page-number" name="page-number" required type="number" step="1" value="{{.PageNumber}}" />
+        </div>
+        <div>
+          <label>Placeholder</label>
+          <button type="submit">OK</button>
+        </div>
+      </fieldset>
+    </form>
+
     <dialog id="bpo-CRUD-dialog" closedby="any">
       <!-- dynamically filled via HTMX -->
     </dialog>
-
     <dialog id="import-dialog" closedby="any">
       <article>
         <form method="post" action="/import/">

@@ -214,6 +214,20 @@ func (q *Queries) GetBloodPressureObservations(ctx context.Context, arg GetBlood
 	return items, nil
 }
 
+const getBloodPressureObservationsTotal = `-- name: GetBloodPressureObservationsTotal :one
+SELECT
+    COUNT(*)
+FROM blood_pressure_observation
+WHERE person_id = $1
+`
+
+func (q *Queries) GetBloodPressureObservationsTotal(ctx context.Context, personID int) (int64, error) {
+	row := q.db.QueryRow(ctx, getBloodPressureObservationsTotal, personID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getPersonByEmail = `-- name: GetPersonByEmail :one
 SELECT
     id,
