@@ -1,7 +1,7 @@
 {{define "bpo-row"}}
 <tr id="bpo-row-{{.ID}}">
-  <td><time datetime={{.ObservedAt}}>
-    <span class="hide-on-desktop">{{.ObservedAt.Format `02.03`}}</span>
+  <td><time datetime="{{.ObservedAt.Format `2006-01-02`}}">
+    <span class="hide-on-desktop">{{.ObservedAt.Format `02.01`}}</span>
     <span class="hide-on-mobile">{{.ObservedAt.Format `Mon. 02 January 2006`}}</span>
   </time></td>
   <td>{{.ObservedAt.Format `15:04`}}</td>
