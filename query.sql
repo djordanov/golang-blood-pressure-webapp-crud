@@ -30,13 +30,6 @@ VALUES ($1, $2)
 RETURNING *
 ;
 
--- name: GetBloodPressureObservationsTotal :one
-SELECT
-    COUNT(*)
-FROM blood_pressure_observation
-WHERE person_id = $1
-;
-
 -- name: GetBloodPressureObservations :many
 SELECT
     id,

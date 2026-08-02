@@ -22,8 +22,7 @@ type App struct {
 }
 
 type TemplateContext struct {
-	Bpos     []bpo.GetBloodPressureObservationsRow
-	PageSize int
+	Bpos []bpo.GetBloodPressureObservationsRow
 }
 
 //go:embed templates/*.html
@@ -56,15 +55,8 @@ func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	_, err = s.queries.GetBloodPressureObservationsTotal(r.Context(), personID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	templateContext := TemplateContext{
-		Bpos:     bpos,
-		PageSize: pageSize,
+		Bpos: bpos,
 	}
 
 	if err = templates.ExecuteTemplate(w, "bpos.html", templateContext); err != nil {
