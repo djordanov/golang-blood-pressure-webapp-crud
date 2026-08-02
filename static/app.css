@@ -26,6 +26,11 @@ table td:nth-child(6) {
   text-align: right;
 }
 
+table th:nth-child(8) {
+  padding-right: 0;
+}
+
+
 #header {
   display: flex;
   gap: var(--pico-spacing);
@@ -34,6 +39,11 @@ table td:nth-child(6) {
 
 h1 {
   flex-grow: 1;
+}
+
+.btn-action-row {
+  display: flex;
+  gap: 9.5px;
 }
 
 /* backported from Tailwind*/
@@ -48,9 +58,8 @@ h1 {
   float: right
 }
 
-.btn-action-row {
+.flex {
   display: flex;
-  gap: 9.5px;
 }
 
 .grow-1 {
