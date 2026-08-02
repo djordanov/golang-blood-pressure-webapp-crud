@@ -22,12 +22,8 @@ type App struct {
 }
 
 type TemplateContext struct {
-	Bpos       []bpo.GetBloodPressureObservationsRow
-	PageSize   int
-	PageNumber int
-	Total      int
-	From       int
-	To         int
+	Bpos     []bpo.GetBloodPressureObservationsRow
+	PageSize int
 }
 
 //go:embed templates/*.html
@@ -39,8 +35,7 @@ var staticFS embed.FS
 
 func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 	personID := r.Context().Value("PersonID").(int)
-	pageSize := 10
-	pageNumber := 1
+	pageSize := 5
 	var err error
 
 	if pageSizeParam := r.URL.Query().Get("page-size"); pageSizeParam != "" {
@@ -51,37 +46,25 @@ func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if pageNumberParam := r.URL.Query().Get("page-number"); pageNumberParam != "" {
-		pageNumber, err = strconv.Atoi(pageNumberParam)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	}
-
 	params := bpo.GetBloodPressureObservationsParams{
 		PersonID: personID,
 		Limit:    int32(pageSize),
-		Offset:   int32(pageSize) * (int32(pageNumber - 1)),
+		Offset:   0,
 	}
 	bpos, err := s.queries.GetBloodPressureObservations(r.Context(), params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	total, err := s.queries.GetBloodPressureObservationsTotal(r.Context(), personID)
+	_, err = s.queries.GetBloodPressureObservationsTotal(r.Context(), personID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	templateContext := TemplateContext{
-		Bpos:       bpos,
-		PageSize:   pageSize,
-		PageNumber: pageNumber,
-		From:       pageSize*(pageNumber-1) + 1,
-		To:         (pageSize * (pageNumber - 1)) + len(bpos),
-		Total:      int(total),
+		Bpos:     bpos,
+		PageSize: pageSize,
 	}
 
 	if err = templates.ExecuteTemplate(w, "bpos.html", templateContext); err != nil {
