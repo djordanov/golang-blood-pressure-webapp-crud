@@ -2,6 +2,15 @@
   .hide-on-desktop {
     display: none;
   }
+
+  #header {
+    gap: 0.5rem;
+  }
+
+  #header button,
+  #header [role="button"] {
+    --pico-form-element-spacing-horizontal: 0.5rem;
+  }
 }
 
 @media (width <=768px) {
@@ -33,13 +42,23 @@ table th:nth-child(8) {
 
 #header {
   display: flex;
+  align-items: center;
   gap: var(--pico-spacing);
   margin: var(--pico-spacing) 0 var(--pico-spacing) 0;
+}
+
+/* keep LOAD ALL / IMPORT / EXPORT labels on one line (they wrap
+   differently: "LOAD ALL" has a space, the others don't) */
+#header button,
+#header [role="button"] {
+  white-space: nowrap;
 }
 
 h1 {
   flex-grow: 1;
 }
+
+
 
 .btn-action-row {
   display: flex;
