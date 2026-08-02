@@ -16,10 +16,14 @@
 </head>
 
 <body>
-  <main class="container-fluid">
+  <main class="container">
 
     <div id="header">
       <h1>Blood Pressure</h1>
+      <a class="secondary" role="button" href="/?page-size=2147483647">
+        <i class="ti ti-eye-plus"></i>
+        <span class="hide-on-mobile">LOAD ALL</span>
+      </a>
       <button class="secondary" command="show-modal" commandfor="import-dialog">
         <i class="ti ti-upload"></i>
         <span class="hide-on-mobile">IMPORT</span>
@@ -30,47 +34,43 @@
       </a>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Time</th>
-          <th class="hide-on-mobile" aria-label="irregular heartbeat"><i class="ti ti-heart-bolt"></i></th>
-          <th>Systolic</th>
-          <th>Diastolic</th>
-          <th class="hide-on-mobile">Pulse</th>
-          <th class="hide-on-mobile">Comment</th>
-          <th>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {{range .Bpos}}
-        {{template "bpo-row" .}}
-        {{end}}
-      </tbody>
-    </table>
-
-    <div class="flex">
-      <span>Displaying {{len .Bpos}} of {{.Total}}</span>
-      {{range .Pages}}
-      <a href="/page-size={{.PageSize}}&page-number={{.PageNumber}}">{{.PageNumber}}</a>
-      {{end}}
-
-      <form method="get" action="/">
-        <label for="page-size">Page Size</label>
-        <input id="page-size" name="page-size" required type="number" step="1" value="{{.PageSize}}" />
-        <button type="submit">OK</button>
-      </form>
+    <div class="overflow-auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th class="hide-on-mobile" aria-label="irregular heartbeat"><i class="ti ti-heart-bolt"></i></th>
+            <th>
+              <span class="hide-on-desktop">Sys</span>
+              <span class="hide-on-mobile">Systolic</span>
+            </th>
+            <th>
+              <span class="hide-on-desktop">Dia</span>
+              <span class="hide-on-mobile">Diastolic</span>
+            </th>
+            <th class="hide-on-mobile">Pulse</th>
+            <th class="hide-on-mobile">Comment</th>
+            <th>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Bpos}}
+          {{template "bpo-row" .}}
+          {{end}}
+        </tbody>
+      </table>
     </div>
 
+    
     <button
        class="w-100"
        hx-get="/new/"
        hx-target="#bpo-CRUD-dialog"
        hx-swap="innerHTML"
-       hx-on::after-request="document.querySelector('#bpo-CRUD-dialog').showModal(); setDefaultDateTime();"><i class="ti ti-plus"></i> ADD NEW</button>
-
+       hx-on::after-request="document.querySelector('#bpo-CRUD-dialog').showModal(); setDefaultDateTime();"><i class="ti ti-plus"></i><span>ADD NEW</span></button>
+    
     <dialog id="bpo-CRUD-dialog" closedby="any">
       <!-- dynamically filled via HTMX -->
     </dialog>

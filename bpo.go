@@ -26,7 +26,8 @@ type TemplateContext struct {
 	PageSize   int
 	PageNumber int
 	Total      int
-	Pages      []int
+	From       int
+	To         int
 }
 
 //go:embed templates/*.html
@@ -74,12 +75,14 @@ func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pages := make([]int, 1)
-	for i := 1; i < int(total)%pageSize; i++ {
-		pages = append(pages, i)
+	templateContext := TemplateContext{
+		Bpos:       bpos,
+		PageSize:   pageSize,
+		PageNumber: pageNumber,
+		From:       pageSize*(pageNumber-1) + 1,
+		To:         (pageSize * (pageNumber - 1)) + len(bpos),
+		Total:      int(total),
 	}
-
-	templateContext := TemplateContext{Bpos: bpos, PageSize: pageSize, PageNumber: pageNumber, Total: int(total)}
 
 	if err = templates.ExecuteTemplate(w, "bpos.html", templateContext); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
