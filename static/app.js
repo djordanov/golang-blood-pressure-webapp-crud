@@ -8,9 +8,14 @@ function setDefaultDateTime() {
 
 // Close modal when clicking outside (on the backdrop)
 document.addEventListener('click', (event) => {
-  const modal = document.querySelector('#bpo-CRUD-dialog');
-  if (modal && modal.open && event.target === modal) {
-    modal.close();
+  const modalCRUD = document.querySelector('#bpo-CRUD-dialog');
+  if (modalCRUD && modalCRUD.open && event.target === modalCRUD) {
+    modalCRUD.close();
+  }
+
+  const modalImport = document.querySelector('#import-dialog');
+  if (modalImport && modalImport.open && event.target === modalImport) {
+    modalImport.close();
   }
 });
 
