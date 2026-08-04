@@ -1,20 +1,25 @@
 {{define "bpo-row"}}
-<tr id="bpo-row-{{.ID}}">
-  <td><time datetime="{{.ObservedAt.Format `2006-01-02`}}">
-    <span class="hide-on-desktop">{{.ObservedAt.Format `02.01`}}</span>
-    <span class="hide-on-mobile">{{.ObservedAt.Format `Mon. 02 January 2006`}}</span>
+<tr id="bpo-row-{{.Bpo.ID}}">
+  <td aria-label="Classification" class="{{.ClassifyBpo}}">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="10" />
+    </svg>
+  </td>
+  <td><time datetime="{{.Bpo.ObservedAt.Format `2006-01-02`}}">
+    <span class="hide-on-desktop">{{.Bpo.ObservedAt.Format `02.01`}}</span>
+    <span class="hide-on-mobile">{{.Bpo.ObservedAt.Format `Mon. 02 January 2006`}}</span>
   </time></td>
-  <td>{{.ObservedAt.Format `15:04`}}</td>
-  <td class="hide-on-mobile">{{if .Irregular}}<i class="ti ti-bolt"></i>{{end}}</td>
-  <td>{{.Systolic}}</td>
-  <td>{{.Diastolic}}</td>
-  <td class="hide-on-mobile">{{.Pulse}}</td>
-  <td class="hide-on-mobile">{{.Comment}}</td>
+  <td>{{.Bpo.ObservedAt.Format `15:04`}}</td>
+  <td class="hide-on-mobile">{{if .Bpo.Irregular}}<i class="ti ti-bolt"></i>{{end}}</td>
+  <td>{{.Bpo.Systolic}}</td>
+  <td>{{.Bpo.Diastolic}}</td>
+  <td class="hide-on-mobile">{{.Bpo.Pulse}}</td>
+  <td class="hide-on-mobile">{{.Bpo.Comment}}</td>
   <td>
     <button
        aria-label="Edit"
        class="secondary w-100"
-       hx-get="/edit/{{.ID}}/"
+       hx-get="/edit/{{.Bpo.ID}}/"
        hx-target="#bpo-CRUD-dialog"
        hx-swap="innerHTML"
        hx-on::after-request="document.querySelector('#bpo-CRUD-dialog').showModal();">

@@ -47,18 +47,52 @@ h1 {
   flex-grow: 1;
 }
 
+td svg {
+  width: 1rem;
+}
+
+.low svg,
+.hypertonia svg,
+.irregular svg {
+  fill: red;
+}
+
+.elevated svg {
+  fill: yellow;
+}
+
+.healthy svg {
+  fill: green;
+}
+
+table th:nth-child(0),
+table td:nth-child(0) {
+  padding-right: 0px;
+}
+
+table th:nth-child(1),
+table td:nth-child(1) {
+  padding-left: 0px;
+}
+
+table th:nth-child(8),
+table td:nth-child(8) {
+  padding-right: 0px;
+}
+
+table th:nth-child(9),
+table td:nth-child(9) {
+  padding-left: 0px;
+}
+
 /* right-align for content in numerical columns */
-table th:nth-child(4),
-table td:nth-child(4),
 table th:nth-child(5),
 table td:nth-child(5),
 table th:nth-child(6),
-table td:nth-child(6) {
+table td:nth-child(6),
+table th:nth-child(7),
+table td:nth-child(7) {
   text-align: right;
-}
-
-table th:nth-child(8) {
-  padding-right: 0;
 }
 
 .btn-action-row {

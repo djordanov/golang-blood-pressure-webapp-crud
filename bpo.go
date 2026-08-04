@@ -21,8 +21,12 @@ type App struct {
 	queries *bpo.Queries
 }
 
+type RowView struct {
+	Bpo bpo.GetBloodPressureObservationsRow
+}
+
 type TemplateContext struct {
-	Bpos []bpo.GetBloodPressureObservationsRow
+	RowViews []RowView
 }
 
 //go:embed templates/*.html
@@ -31,6 +35,23 @@ var templates = template.Must(template.ParseFS(templateFS, "templates/*.html"))
 
 //go:embed static/*
 var staticFS embed.FS
+
+func (rowView *RowView) ClassifyBpo() string {
+	if rowView.Bpo.Irregular {
+		return "irregular"
+	}
+	if rowView.Bpo.Systolic < 100 {
+		return "low"
+	}
+	if rowView.Bpo.Systolic >= 140 || rowView.Bpo.Diastolic > 90 {
+		return "hypertonia"
+	}
+	if rowView.Bpo.Systolic > 130 || rowView.Bpo.Diastolic > 85 {
+		return "elevated"
+	}
+
+	return "healthy"
+}
 
 func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 	personID := r.Context().Value("PersonID").(int)
@@ -55,10 +76,14 @@ func (s *App) getHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	templateContext := TemplateContext{
-		Bpos: bpos,
+	var rowViews []RowView
+	for _, bpo := range bpos {
+		rowViews = append(rowViews, RowView{Bpo: bpo})
 	}
 
+	templateContext := TemplateContext{
+		RowViews: rowViews,
+	}
 	if err = templates.ExecuteTemplate(w, "bpos.html", templateContext); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
