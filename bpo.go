@@ -342,8 +342,18 @@ func (s *App) putHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	row := bpo.GetBloodPressureObservationsRow{
+		ID:         getReturned.ID,
+		ObservedAt: getReturned.ObservedAt,
+		Irregular:  getReturned.Irregular,
+		Systolic:   getReturned.Systolic,
+		Diastolic:  getReturned.Diastolic,
+		Pulse:      getReturned.Pulse,
+		Comment:    getReturned.Comment,
+	}
+	rowView := RowView{Bpo: row}
 
-	if err = templates.ExecuteTemplate(w, "bpo-row", getReturned); err != nil {
+	if err = templates.ExecuteTemplate(w, "bpo-row", &rowView); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -407,8 +417,18 @@ func (s *App) postHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	row := bpo.GetBloodPressureObservationsRow{
+		ID:         getReturned.ID,
+		ObservedAt: getReturned.ObservedAt,
+		Irregular:  getReturned.Irregular,
+		Systolic:   getReturned.Systolic,
+		Diastolic:  getReturned.Diastolic,
+		Pulse:      getReturned.Pulse,
+		Comment:    getReturned.Comment,
+	}
+	rowView := RowView{Bpo: row}
 
-	err = templates.ExecuteTemplate(w, "bpo-row", getReturned)
+	err = templates.ExecuteTemplate(w, "bpo-row", &rowView)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
