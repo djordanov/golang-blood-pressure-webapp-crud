@@ -1,5 +1,5 @@
-@media (768px < width) {
-  .hide-on-desktop {
+@media (width < 768px) {
+  .hide-on-mobile {
     display: none;
   }
 
@@ -14,7 +14,7 @@
 }
 
 @media (768px <=width) {
-  .hide-on-mobile {
+  .hide-on-desktop {
     display: none;
   }
 

@@ -84,6 +84,6 @@ RETURNING *
 
 -- name: DeleteBloodPressureObservation :exec
 DELETE FROM blood_pressure_observation
-WHERE id = $1
-    AND person_id = $2
+WHERE person_id = $1
+    AND id = $2
 ;

@@ -96,17 +96,17 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 
 const deleteBloodPressureObservation = `-- name: DeleteBloodPressureObservation :exec
 DELETE FROM blood_pressure_observation
-WHERE id = $1
-    AND person_id = $2
+WHERE person_id = $1
+    AND id = $2
 `
 
 type DeleteBloodPressureObservationParams struct {
-	ID       int
 	PersonID int
+	ID       int
 }
 
 func (q *Queries) DeleteBloodPressureObservation(ctx context.Context, arg DeleteBloodPressureObservationParams) error {
-	_, err := q.db.Exec(ctx, deleteBloodPressureObservation, arg.ID, arg.PersonID)
+	_, err := q.db.Exec(ctx, deleteBloodPressureObservation, arg.PersonID, arg.ID)
 	return err
 }
 
