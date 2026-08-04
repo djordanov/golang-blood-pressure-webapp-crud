@@ -21,13 +21,6 @@
   #header {
     gap: var(--pico-spacing);
   }
-
-  /* dialog: full-screen on mobile so form fields feel proportionate */
-  dialog {
-    width: 100vw;
-    height: 100vh;
-  }
-
 }
 
 #header {
@@ -63,16 +56,6 @@ td svg {
 
 .healthy svg {
   fill: green;
-}
-
-table th:nth-child(0),
-table td:nth-child(0) {
-  padding-right: 0px;
-}
-
-table th:nth-child(1),
-table td:nth-child(1) {
-  padding-left: 0px;
 }
 
 table th:nth-child(8),

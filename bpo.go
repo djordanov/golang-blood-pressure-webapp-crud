@@ -40,10 +40,10 @@ func (rowView *RowView) ClassifyBpo() string {
 	if rowView.Bpo.Irregular {
 		return "irregular"
 	}
-	if rowView.Bpo.Systolic < 100 {
+	if rowView.Bpo.Systolic < 100 || rowView.Bpo.Diastolic < 60 {
 		return "low"
 	}
-	if rowView.Bpo.Systolic >= 140 || rowView.Bpo.Diastolic > 90 {
+	if rowView.Bpo.Systolic >= 140 || rowView.Bpo.Diastolic >= 90 {
 		return "hypertonia"
 	}
 	if rowView.Bpo.Systolic > 130 || rowView.Bpo.Diastolic > 85 {
