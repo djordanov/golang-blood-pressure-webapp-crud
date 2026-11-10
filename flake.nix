@@ -36,7 +36,7 @@
       };
 
       devShells.${system}.default = pkgs.mkShell {
-        packages = with pkgs; [ go sqlc gopls gotools go-tools delve air postgresql ];
+        packages = with pkgs; [ go sqlc gopls gotools go-tools delve govulncheck air postgresql ];
         shellHook = "echo 'Entered Flake'";
       };
     };
